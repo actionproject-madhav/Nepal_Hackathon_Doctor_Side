@@ -944,6 +944,200 @@
   margin-top: 40px;
 }
 
+/* ===== No Patient Screen ===== */
+.ins-no-patient {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ins-np-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--gray-400);
+}
+
+.ins-no-patient h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.ins-no-patient > p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.ins-patient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.ins-pl-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.ins-pl-item:hover {
+  border-color: var(--green-300);
+  background: var(--green-50);
+}
+
+.ins-pl-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.ins-pl-av-high { background: var(--rose-500); }
+.ins-pl-av-moderate { background: var(--amber-500); }
+.ins-pl-av-low { background: var(--green-500); }
+
+.ins-pl-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ins-pl-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.ins-pl-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ins-pl-insurer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.ins-pl-insurer-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ins-pl-network {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.ins-pl-in { background: var(--green-50); color: var(--green-700); }
+.ins-pl-out { background: var(--amber-50); color: var(--amber-600); }
+
+/* ===== Network Status Banners ===== */
+.ins-oon-banner {
+  display: flex;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--amber-50);
+  border: 1px solid var(--amber-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  color: var(--amber-700);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.ins-oon-banner strong { display: block; margin-bottom: 2px; }
+.ins-oon-banner p { color: var(--text-secondary); font-size: 0.78rem; }
+
+.ins-oon-link {
+  color: var(--green-600);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ins-in-banner {
+  display: flex;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  color: var(--green-700);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.ins-in-banner strong { display: block; margin-bottom: 2px; }
+.ins-in-banner p { color: var(--text-secondary); font-size: 0.78rem; }
+
+/* ===== Submitted Details ===== */
+.ins-submitted-details {
+  text-align: left;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.ins-sd-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.ins-sd-row:last-child { border-bottom: none; }
+.ins-sd-row span { color: var(--text-muted); }
+.ins-sd-row strong { color: var(--text-primary); }
+.ins-sd-green { color: var(--green-600) !important; }
+.ins-sd-amber { color: var(--amber-600) !important; }
+
+/* ===== Denial Meta ===== */
+.ins-denial-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.ins-denial-window {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .ins-two-col { grid-template-columns: 1fr; }

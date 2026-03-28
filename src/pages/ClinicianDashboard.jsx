@@ -10,8 +10,8 @@ const SIDEBAR_ITEMS = [
   { id: 'patients', label: 'Patients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
   { id: 'statistics', label: 'Statistics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   { id: 'messages', label: 'Messages', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
-  { id: 'insurance', label: 'Insurance', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
-  { id: 'integrations', label: 'Integrations', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+  { id: 'claims', label: 'Claims', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+  { id: 'network', label: 'Network', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
 ];
 
 const SIDEBAR_BOTTOM = [
@@ -53,8 +53,8 @@ export default function ClinicianDashboard() {
   }
 
   function handleSidebarClick(id) {
-    if (id === 'insurance') navigate('/insurance');
-    if (id === 'integrations') navigate('/integrations');
+    if (id === 'claims') navigate('/insurance');
+    if (id === 'network') navigate('/integrations');
   }
 
   return (
@@ -71,7 +71,7 @@ export default function ClinicianDashboard() {
             <button
               key={item.id}
               className={`sb-item ${activeTab === item.id ? 'sb-item-active' : ''}`}
-              onClick={() => (item.id === 'insurance' || item.id === 'integrations') ? handleSidebarClick(item.id) : setActiveTab(item.id)}
+              onClick={() => (item.id === 'claims' || item.id === 'network') ? handleSidebarClick(item.id) : setActiveTab(item.id)}
             >
               <SidebarIcon d={item.icon} />
               <span>{item.label}</span>
@@ -364,7 +364,7 @@ export default function ClinicianDashboard() {
                 View Full Profile
               </button>
               <button className="btn btn-sm btn-outline" style={{ width: '100%' }} onClick={() => navigate('/insurance', { state: { patientId: selectedPatient.id, result: selectedAnalytics[selectedAnalytics.length - 1] } })}>
-                Submit Insurance
+                File Insurance Claim
               </button>
             </div>
           </motion.aside>

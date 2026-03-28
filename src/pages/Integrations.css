@@ -350,6 +350,80 @@
   background: var(--green-600);
 }
 
+/* Info Bar */
+.intg-info-bar {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--blue-50, #EFF6FF);
+  border: 1px solid var(--blue-200, #BFDBFE);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  align-items: flex-start;
+}
+
+.intg-info-bar svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--blue-500, #3B82F6);
+}
+
+/* In-network badge */
+.intg-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intg-in-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  background: var(--green-50);
+  color: var(--green-700);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.intg-card-connected {
+  border-color: var(--green-200);
+}
+
+/* Patient Count */
+.intg-patient-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* CPT Codes */
+.intg-cpt-row {
+  margin-top: 12px;
+}
+
+.intg-cpt-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.intg-cpt-tag {
+  padding: 3px 10px;
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  font-family: monospace;
+}
+
 /* Empty */
 .intg-empty {
   text-align: center;

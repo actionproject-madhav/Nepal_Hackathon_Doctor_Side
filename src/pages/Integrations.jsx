@@ -1,140 +1,56 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getAllProviders, getConnectedIds, setConnectedIds } from '../data/insuranceProviders';
+import { MOCK_PATIENTS } from '../data/mockPatients';
 import './Integrations.css';
 
-const INSURANCE_PROVIDERS = [
-  {
-    id: 'aetna',
-    name: 'Aetna',
-    url: 'aetna.com',
-    color: '#7B2D8E',
-    letter: 'A',
-    desc: 'One of the largest US health insurers. Supports electronic claims via EDI 837, prior authorization, and eligibility verification.',
-    categories: ['Medical', 'Behavioral Health', 'Pharmacy'],
-    connected: true,
-    policies: { denialRate: '18%', avgProcessing: '14 days', priorAuthRequired: true, parityCompliant: 'Partial' },
-  },
-  {
-    id: 'united',
-    name: 'UnitedHealthcare',
-    url: 'uhc.com',
-    color: '#002677',
-    letter: 'U',
-    desc: 'Largest US health insurer by membership. Real-time eligibility checks, claims status API, and provider credentialing.',
-    categories: ['Medical', 'Behavioral Health', 'Vision'],
-    connected: true,
-    policies: { denialRate: '22%', avgProcessing: '18 days', priorAuthRequired: true, parityCompliant: 'Under review' },
-  },
-  {
-    id: 'cigna',
-    name: 'Cigna',
-    url: 'cigna.com',
-    color: '#E97100',
-    letter: 'C',
-    desc: 'Global health service company. Supports EAP integration, telehealth claims, and behavioral health carve-out programs.',
-    categories: ['Medical', 'Behavioral Health', 'EAP'],
-    connected: false,
-    policies: { denialRate: '20%', avgProcessing: '16 days', priorAuthRequired: true, parityCompliant: 'Yes' },
-  },
-  {
-    id: 'anthem',
-    name: 'Anthem BCBS',
-    url: 'anthem.com',
-    color: '#003DA6',
-    letter: 'B',
-    desc: 'Blue Cross Blue Shield affiliate. Largest BCBS licensee. Accepts art therapy under behavioral health with proper CPT coding.',
-    categories: ['Medical', 'Behavioral Health'],
-    connected: true,
-    policies: { denialRate: '16%', avgProcessing: '12 days', priorAuthRequired: false, parityCompliant: 'Yes' },
-  },
-  {
-    id: 'humana',
-    name: 'Humana',
-    url: 'humana.com',
-    color: '#4DB848',
-    letter: 'H',
-    desc: 'Focused on Medicare Advantage and military healthcare. Strong behavioral health coverage for veterans and seniors.',
-    categories: ['Medicare', 'Behavioral Health', 'Military'],
-    connected: false,
-    policies: { denialRate: '14%', avgProcessing: '10 days', priorAuthRequired: false, parityCompliant: 'Yes' },
-  },
-  {
-    id: 'kaiser',
-    name: 'Kaiser Permanente',
-    url: 'kaiserpermanente.org',
-    color: '#004B87',
-    letter: 'K',
-    desc: 'Integrated managed care. In-network behavioral health services with direct referral pathways and embedded care teams.',
-    categories: ['Medical', 'Behavioral Health', 'Integrated'],
-    connected: false,
-    policies: { denialRate: '10%', avgProcessing: '8 days', priorAuthRequired: false, parityCompliant: 'Yes' },
-  },
-  {
-    id: 'medicare',
-    name: 'Medicare / CMS',
-    url: 'cms.gov',
-    color: '#112E51',
-    letter: 'M',
-    desc: 'Federal health insurance for 65+. Covers art therapy under Part B with licensed provider. Standardized claim forms (CMS-1500).',
-    categories: ['Federal', 'Part B', 'Behavioral Health'],
-    connected: true,
-    policies: { denialRate: '12%', avgProcessing: '30 days', priorAuthRequired: false, parityCompliant: 'N/A (Federal)' },
-  },
-  {
-    id: 'molina',
-    name: 'Molina Healthcare',
-    url: 'molinahealthcare.com',
-    color: '#00A651',
-    letter: 'M',
-    desc: 'Medicaid managed care specialist. Serves low-income populations across 19 states. Strong parity enforcement.',
-    categories: ['Medicaid', 'Behavioral Health', 'CHIP'],
-    connected: false,
-    policies: { denialRate: '15%', avgProcessing: '20 days', priorAuthRequired: true, parityCompliant: 'Yes' },
-  },
-  {
-    id: 'tricare',
-    name: 'TRICARE',
-    url: 'tricare.mil',
-    color: '#003F72',
-    letter: 'T',
-    desc: 'Military health system for active duty, retirees, and dependents. Covers art therapy and alternative treatments for PTSD.',
-    categories: ['Military', 'Behavioral Health', 'PTSD'],
-    connected: false,
-    policies: { denialRate: '8%', avgProcessing: '14 days', priorAuthRequired: false, parityCompliant: 'Yes' },
-  },
-];
-
-const FILTER_TABS = ['All integrations', 'Connected', 'Available', 'Behavioral Health', 'Federal'];
+const FILTER_TABS = ['All insurers', 'In-network', 'Out-of-network', 'Behavioral Health', 'Federal'];
 
 export default function Integrations() {
   const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState('All integrations');
+  const [activeFilter, setActiveFilter] = useState('All insurers');
   const [search, setSearch] = useState('');
-  const [providers, setProviders] = useState(INSURANCE_PROVIDERS);
-  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [providers, setProviders] = useState(() => getAllProviders());
+  const [expandedId, setExpandedId] = useState(null);
 
   const filtered = providers.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.desc.toLowerCase().includes(search.toLowerCase());
-    if (activeFilter === 'Connected') return matchSearch && p.connected;
-    if (activeFilter === 'Available') return matchSearch && !p.connected;
+    if (activeFilter === 'In-network') return matchSearch && p.connected;
+    if (activeFilter === 'Out-of-network') return matchSearch && !p.connected;
     if (activeFilter === 'Behavioral Health') return matchSearch && p.categories.includes('Behavioral Health');
     if (activeFilter === 'Federal') return matchSearch && (p.categories.includes('Federal') || p.categories.includes('Medicare') || p.categories.includes('Medicaid') || p.categories.includes('Military'));
     return matchSearch;
   });
 
   const toggleConnection = (id) => {
-    setProviders(prev => prev.map(p =>
-      p.id === id ? { ...p, connected: !p.connected } : p
-    ));
+    setProviders(prev => {
+      const updated = prev.map(p =>
+        p.id === id ? { ...p, connected: !p.connected } : p
+      );
+      setConnectedIds(updated.filter(p => p.connected).map(p => p.id));
+      return updated;
+    });
   };
 
   const connectedCount = providers.filter(p => p.connected).length;
 
+  const patientsPerInsurer = useMemo(() => {
+    const map = {};
+    MOCK_PATIENTS.forEach(pt => {
+      providers.forEach(pr => {
+        if (pt.insuranceProvider.toLowerCase().includes(pr.name.toLowerCase()) ||
+            pt.insuranceProvider.toLowerCase().includes(pr.id)) {
+          map[pr.id] = (map[pr.id] || 0) + 1;
+        }
+      });
+    });
+    return map;
+  }, [providers]);
+
   return (
     <div className="intg-page">
-      {/* Header */}
       <header className="intg-header">
         <div className="container">
           <div className="intg-header-inner">
@@ -151,16 +67,20 @@ export default function Integrations() {
       <main className="container intg-main">
         <div className="intg-title-row">
           <div>
-            <h1>Integrations and connected insurers</h1>
-            <p>Connect insurance providers to auto-fill claim forms with their specific policies, CPT codes, and submission requirements.</p>
+            <h1>Practice Network</h1>
+            <p>Manage which insurance providers your practice is credentialed with. In-network insurers will be auto-matched when filing claims for patients.</p>
           </div>
           <div className="intg-connected-count">
             <span className="intg-cc-num">{connectedCount}</span>
-            <span className="intg-cc-label">Connected</span>
+            <span className="intg-cc-label">In-network</span>
           </div>
         </div>
 
-        {/* Filter Tabs + Search */}
+        <div className="intg-info-bar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Toggle insurers your practice accepts. When you file a claim for a patient, we auto-detect their insurer and check if you're in-network. Out-of-network claims are flagged with a warning.</span>
+        </div>
+
         <div className="intg-toolbar">
           <div className="intg-tabs">
             {FILTER_TABS.map(tab => (
@@ -175,16 +95,15 @@ export default function Integrations() {
           </div>
           <div className="intg-search">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search" value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search insurers..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
 
-        {/* Provider Grid */}
         <div className="intg-grid">
           {filtered.map((provider, i) => (
             <motion.div
               key={provider.id}
-              className="intg-card"
+              className={`intg-card ${provider.connected ? 'intg-card-connected' : ''}`}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
@@ -194,7 +113,10 @@ export default function Integrations() {
                   {provider.letter}
                 </div>
                 <div className="intg-card-info">
-                  <h3>{provider.name}</h3>
+                  <div className="intg-card-name-row">
+                    <h3>{provider.name}</h3>
+                    {provider.connected && <span className="intg-in-badge">In-network</span>}
+                  </div>
                   <a className="intg-card-url" href={`https://${provider.url}`} target="_blank" rel="noopener noreferrer">
                     {provider.url}
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
@@ -210,9 +132,16 @@ export default function Integrations() {
                 ))}
               </div>
 
+              {patientsPerInsurer[provider.id] > 0 && (
+                <div className="intg-patient-count">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  {patientsPerInsurer[provider.id]} patient{patientsPerInsurer[provider.id] > 1 ? 's' : ''} with this insurer
+                </div>
+              )}
+
               <div className="intg-card-bottom">
-                <button className="intg-view-btn" onClick={() => setSelectedProvider(selectedProvider?.id === provider.id ? null : provider)}>
-                  {selectedProvider?.id === provider.id ? 'Hide details' : 'View policies'}
+                <button className="intg-view-btn" onClick={() => setExpandedId(expandedId === provider.id ? null : provider.id)}>
+                  {expandedId === provider.id ? 'Hide details' : 'View policies'}
                 </button>
                 <label className="intg-toggle">
                   <input
@@ -226,7 +155,7 @@ export default function Integrations() {
                 </label>
               </div>
 
-              {selectedProvider?.id === provider.id && (
+              {expandedId === provider.id && (
                 <motion.div
                   className="intg-details"
                   initial={{ opacity: 0, height: 0 }}
@@ -255,12 +184,23 @@ export default function Integrations() {
                         {provider.policies.parityCompliant}
                       </span>
                     </div>
+                    <div className="intg-detail-item">
+                      <span className="intg-di-label">Claim Form</span>
+                      <span className="intg-di-val">{provider.policies.formType}</span>
+                    </div>
+                    <div className="intg-detail-item">
+                      <span className="intg-di-label">Appeal Window</span>
+                      <span className="intg-di-val">{provider.policies.appealWindow}</span>
+                    </div>
                   </div>
-                  {provider.connected && (
-                    <button className="intg-file-claim" onClick={() => navigate('/insurance', { state: { insurerOverride: provider } })}>
-                      File a claim with {provider.name}
-                    </button>
-                  )}
+                  <div className="intg-cpt-row">
+                    <span className="intg-di-label">Accepted CPT Codes</span>
+                    <div className="intg-cpt-tags">
+                      {provider.policies.cptCodes.map(code => (
+                        <span key={code} className="intg-cpt-tag">{code}</span>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </motion.div>

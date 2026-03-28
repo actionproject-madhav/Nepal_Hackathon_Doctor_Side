@@ -77,8 +77,8 @@ export default function PatientDetail() {
               All Patients
             </button>
             <span className="pd-brand">VoiceCanvas Clinic</span>
-            <button className="btn btn-sm btn-ghost" onClick={() => navigate('/insurance', { state: { patientId: patient.id, result: latestAnalysis } })}>
-              Insurance
+            <button className="btn btn-sm btn-primary" onClick={() => navigate('/insurance', { state: { patientId: patient.id, result: latestAnalysis } })}>
+              File Claim
             </button>
           </div>
         </div>
@@ -354,7 +354,7 @@ export default function PatientDetail() {
               Download Clinical PDF
             </button>
             <button className="btn btn-outline" onClick={() => navigate('/insurance', { state: { patientId: patient.id, result: latestAnalysis } })}>
-              Submit to Insurance
+              File Insurance Claim
             </button>
           </div>
 
