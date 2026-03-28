@@ -4,6 +4,7 @@ import ClinicLanding from './pages/ClinicLanding';
 import ClinicianDashboard from './pages/ClinicianDashboard';
 import PatientDetail from './pages/PatientDetail';
 import InsuranceForm from './pages/InsuranceForm';
+import Integrations from './pages/Integrations';
 import './index.css';
 
 function AnimatedRoutes() {
@@ -23,6 +24,7 @@ function AnimatedRoutes() {
           <Route path="/dashboard" element={<ClinicianDashboard />} />
           <Route path="/dashboard/:patientId" element={<PatientDetail />} />
           <Route path="/insurance" element={<InsuranceForm />} />
+          <Route path="/integrations" element={<Integrations />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

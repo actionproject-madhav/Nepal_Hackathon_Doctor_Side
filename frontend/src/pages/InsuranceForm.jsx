@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
+import { getPatientById, getPatientAnalytics, MOCK_PATIENTS } from '../data/mockPatients';
+import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
 import './InsuranceForm.css';
 
@@ -22,6 +23,9 @@ export default function InsuranceForm() {
   const sessions = patient?.sessions || [];
   const result = passedResult || (analytics.length > 0 ? analytics[analytics.length - 1] : null);
 
+  const matchedInsurer = patient ? findProviderByPatientInsurer(patient.insuranceProvider) : null;
+  const inNetwork = patient ? isInNetwork(patient.insuranceProvider) : false;
+
   const [formData, setFormData] = useState({
     chiefComplaint: result?.insurance_data?.chief_complaint || '',
     symptomDuration: result?.insurance_data?.symptom_duration || '',
@@ -31,6 +35,7 @@ export default function InsuranceForm() {
     patientName: patient?.name || '',
     dob: patient ? (patient.age === 8 ? '2018-03-15' : patient.age === 16 ? '2010-06-22' : patient.age === 28 ? '1998-01-10' : patient.age === 45 ? '1981-09-05' : '1954-11-30') : '',
     insuranceId: patient ? `INS-${patient.id.replace('pt-', '').toUpperCase()}-${Math.floor(Math.random() * 9000 + 1000)}` : '',
+    insurerName: patient?.insuranceProvider || '',
     groupNumber: patient?.insuranceProvider ? `GRP-${patient.insuranceProvider.substring(0, 3).toUpperCase()}-001` : '',
     providerName: 'Dr. Sarah Mitchell, PhD, LCSW',
     providerNPI: '1234567890',
@@ -87,8 +92,9 @@ export default function InsuranceForm() {
     : 0;
 
   const estimatedCost = formData.requestedService === 'both' ? 4800 : 2400;
-  const planPays = Math.round(estimatedCost * 0.7);
+  const planPays = Math.round(estimatedCost * (inNetwork ? 0.8 : 0.5));
   const patientOwes = estimatedCost - planPays;
+  const coveragePercent = inNetwork ? 80 : 50;
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -99,17 +105,77 @@ export default function InsuranceForm() {
     setStep('submitted');
   };
 
+  // No patient selected — show selection screen
+  if (!patient) {
+    return (
+      <div className="ins-page">
+        <header className="ins-topnav">
+          <button className="ins-back" onClick={() => navigate('/dashboard')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <nav className="ins-nav-pills">
+            <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
+            <button className="ins-nav-pill ins-nav-active">Claims</button>
+            <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Network</button>
+          </nav>
+          <div className="ins-topnav-right">
+            <div className="ins-user-avatar">Dr</div>
+          </div>
+        </header>
+
+        <div className="ins-content">
+          <div className="ins-no-patient">
+            <div className="ins-np-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </div>
+            <h2>Select a Patient to File a Claim</h2>
+            <p>Insurance claims must be filed for a specific patient. Choose a patient from your dashboard or from the list below.</p>
+
+            <div className="ins-patient-list">
+              {MOCK_PATIENTS.map(pt => {
+                const ptInNetwork = isInNetwork(pt.insuranceProvider);
+                return (
+                  <button
+                    key={pt.id}
+                    className="ins-pl-item"
+                    onClick={() => navigate('/insurance', { state: { patientId: pt.id } })}
+                  >
+                    <div className={`ins-pl-avatar ins-pl-av-${pt.riskLevel}`}>{pt.avatar}</div>
+                    <div className="ins-pl-info">
+                      <span className="ins-pl-name">{pt.name}</span>
+                      <span className="ins-pl-sub">{pt.diagnosis.split(';')[0].split(' ').slice(1).join(' ')}</span>
+                    </div>
+                    <div className="ins-pl-insurer">
+                      <span className="ins-pl-insurer-name">{pt.insuranceProvider}</span>
+                      <span className={`ins-pl-network ${ptInNetwork ? 'ins-pl-in' : 'ins-pl-out'}`}>
+                        {ptInNetwork ? 'In-network' : 'Out-of-network'}
+                      </span>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ins-page">
-      {/* Top Nav */}
       <header className="ins-topnav">
-        <button className="ins-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
+        <button className="ins-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <nav className="ins-nav-pills">
           <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
           <button className="ins-nav-pill ins-nav-active">Claims</button>
-          <button className="ins-nav-pill">Documents</button>
+          <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Network</button>
         </nav>
         <div className="ins-topnav-right">
           <div className="ins-user-avatar">Dr</div>
@@ -120,21 +186,44 @@ export default function InsuranceForm() {
         <AnimatePresence mode="wait">
           {step === 'form' && (
             <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {/* Network Status Banner */}
+              {!inNetwork && (
+                <div className="ins-oon-banner">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/>
+                  </svg>
+                  <div>
+                    <strong>Out-of-Network: {patient.insuranceProvider}</strong>
+                    <p>This insurer is not in your practice network. Coverage may be reduced (est. 50% vs 80%). <button className="ins-oon-link" onClick={() => navigate('/integrations')}>Add to network</button></p>
+                  </div>
+                </div>
+              )}
+
+              {inNetwork && matchedInsurer && (
+                <div className="ins-in-banner">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                  </svg>
+                  <div>
+                    <strong>In-Network: {matchedInsurer.name}</strong>
+                    <p>MH denial rate: {matchedInsurer.policies.denialRate} · Processing: {matchedInsurer.policies.avgProcessing} · {matchedInsurer.policies.priorAuthRequired ? 'Prior auth required' : 'No prior auth needed'}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Claim Header */}
               <div className="ins-claim-header">
                 <div className="ins-claim-title">
-                  <h1>Mental Health<br /><span>Insurance Claim</span></h1>
+                  <h1>Insurance Claim<br /><span>Pre-Authorization</span></h1>
                 </div>
                 <div className="ins-claim-meta">
-                  {patient && (
-                    <div className="ins-meta-patient">
-                      <div className="ins-meta-avatar">{patient.avatar}</div>
-                      <div>
-                        <span className="ins-meta-name">{patient.name}</span>
-                        <span className="ins-meta-email">{patient.insuranceProvider}</span>
-                      </div>
+                  <div className="ins-meta-patient">
+                    <div className="ins-meta-avatar">{patient.avatar}</div>
+                    <div>
+                      <span className="ins-meta-name">{patient.name}</span>
+                      <span className="ins-meta-email">{patient.insuranceProvider}</span>
                     </div>
-                  )}
+                  </div>
                   <div className="ins-meta-pills">
                     <div className="ins-meta-pill">
                       <span className="imp-label">Date of service</span>
@@ -144,6 +233,10 @@ export default function InsuranceForm() {
                       <span className="imp-label">Claim ID</span>
                       <span className="imp-value">{formData.insuranceId || 'PENDING'}</span>
                     </div>
+                    <div className="ins-meta-pill">
+                      <span className="imp-label">Sessions</span>
+                      <span className="imp-value">{sessions.length}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -151,38 +244,37 @@ export default function InsuranceForm() {
               {/* Financial Overview */}
               <div className="ins-financial-row">
                 <div className="ins-fin-card">
-                  <span className="ins-fin-label">Plan pays</span>
-                  <span className="ins-fin-amount">${(planPays / 1000).toFixed(0)}k</span>
+                  <span className="ins-fin-label">Plan pays ({coveragePercent}%)</span>
+                  <span className="ins-fin-amount">${planPays.toLocaleString()}</span>
                   <div className="ins-fin-bar">
-                    <div className="ins-fin-bar-fill ins-fin-fill-green" style={{ width: '70%' }} />
+                    <div className="ins-fin-bar-fill ins-fin-fill-green" style={{ width: `${coveragePercent}%` }} />
                   </div>
                 </div>
                 <div className="ins-fin-card">
                   <span className="ins-fin-label">Patient responsibility</span>
-                  <span className="ins-fin-amount">${(patientOwes / 1000).toFixed(1)}k</span>
+                  <span className="ins-fin-amount">${patientOwes.toLocaleString()}</span>
                   <div className="ins-fin-bar">
-                    <div className="ins-fin-bar-fill ins-fin-fill-gray" style={{ width: '30%' }} />
+                    <div className="ins-fin-bar-fill ins-fin-fill-gray" style={{ width: `${100 - coveragePercent}%` }} />
                   </div>
                 </div>
                 <div className="ins-fin-card">
                   <span className="ins-fin-label">Estimated total</span>
-                  <span className="ins-fin-amount ins-fin-amount-lg">${(estimatedCost / 1000).toFixed(1)}k</span>
+                  <span className="ins-fin-amount ins-fin-amount-lg">${estimatedCost.toLocaleString()}</span>
                 </div>
                 <div className="ins-fin-card ins-fin-card-accent">
-                  <span className="ins-fin-label-dark">Appeal recovery</span>
-                  <span className="ins-fin-amount-accent">${(estimatedCost * 0.6 / 1000).toFixed(1)}k</span>
-                  <span className="ins-fin-subtext">{avgWinRate}% win rate</span>
+                  <span className="ins-fin-label-dark">If denied, appeal recovery</span>
+                  <span className="ins-fin-amount-accent">${Math.round(estimatedCost * avgWinRate / 100).toLocaleString()}</span>
+                  <span className="ins-fin-subtext">{avgWinRate}% win rate based on precedents</span>
                 </div>
               </div>
 
               {/* Two Column: Form + Parity */}
               <div className="ins-two-col">
-                {/* Left: Form */}
                 <form className="ins-form-col" onSubmit={handleSubmit}>
                   <div className="ins-form-section">
                     <h3>Clinical Information</h3>
                     <p className="ins-form-hint">
-                      {patient ? `Auto-filled from ${patient.name}'s ${sessions.length} sessions` : 'Enter clinical details'}
+                      Auto-filled from {patient.name}'s {sessions.length} VoiceCanvas sessions
                     </p>
                     <div className="ins-form-grid">
                       <div className="ins-fg">
@@ -197,58 +289,72 @@ export default function InsuranceForm() {
                         <label>Functional Impairment</label>
                         <textarea value={formData.functionalImpairment} onChange={e => handleChange('functionalImpairment', e.target.value)} rows={2} />
                       </div>
-                      <div className="ins-fg">
-                        <label>Diagnosis</label>
-                        <input type="text" value={formData.diagnosisCategory} onChange={e => handleChange('diagnosisCategory', e.target.value)} />
-                      </div>
-                      <div className="ins-fg">
-                        <label>Requested Service</label>
-                        <select value={formData.requestedService} onChange={e => handleChange('requestedService', e.target.value)}>
-                          <option value="therapy">Therapy</option>
-                          <option value="psychiatric eval">Psychiatric Eval</option>
-                          <option value="both">Both</option>
-                        </select>
+                      <div className="ins-fg-2col">
+                        <div className="ins-fg">
+                          <label>Diagnosis (ICD-10)</label>
+                          <input type="text" value={formData.diagnosisCategory} onChange={e => handleChange('diagnosisCategory', e.target.value)} />
+                        </div>
+                        <div className="ins-fg">
+                          <label>Requested Service</label>
+                          <select value={formData.requestedService} onChange={e => handleChange('requestedService', e.target.value)}>
+                            <option value="therapy">Art Therapy (90837)</option>
+                            <option value="psychiatric eval">Psychiatric Eval (96130)</option>
+                            <option value="both">Both</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="ins-form-section">
-                    <h3>Patient & Provider</h3>
-                    <div className="ins-form-grid ins-fg-2col">
-                      <div className="ins-fg">
-                        <label>Patient Name</label>
-                        <input type="text" value={formData.patientName} onChange={e => handleChange('patientName', e.target.value)} />
+                    <h3>Patient & Provider Details</h3>
+                    <div className="ins-form-grid">
+                      <div className="ins-fg-2col">
+                        <div className="ins-fg">
+                          <label>Patient Name</label>
+                          <input type="text" value={formData.patientName} readOnly />
+                        </div>
+                        <div className="ins-fg">
+                          <label>Date of Birth</label>
+                          <input type="date" value={formData.dob} onChange={e => handleChange('dob', e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="ins-fg-2col">
+                        <div className="ins-fg">
+                          <label>Insurance Provider</label>
+                          <input type="text" value={formData.insurerName} readOnly />
+                        </div>
+                        <div className="ins-fg">
+                          <label>Insurance ID</label>
+                          <input type="text" value={formData.insuranceId} onChange={e => handleChange('insuranceId', e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="ins-fg-2col">
+                        <div className="ins-fg">
+                          <label>Group Number</label>
+                          <input type="text" value={formData.groupNumber} onChange={e => handleChange('groupNumber', e.target.value)} />
+                        </div>
+                        <div className="ins-fg">
+                          <label>Provider NPI</label>
+                          <input type="text" value={formData.providerNPI} onChange={e => handleChange('providerNPI', e.target.value)} />
+                        </div>
                       </div>
                       <div className="ins-fg">
-                        <label>Date of Birth</label>
-                        <input type="date" value={formData.dob} onChange={e => handleChange('dob', e.target.value)} />
-                      </div>
-                      <div className="ins-fg">
-                        <label>Insurance ID</label>
-                        <input type="text" value={formData.insuranceId} onChange={e => handleChange('insuranceId', e.target.value)} />
-                      </div>
-                      <div className="ins-fg">
-                        <label>Group Number</label>
-                        <input type="text" value={formData.groupNumber} onChange={e => handleChange('groupNumber', e.target.value)} />
-                      </div>
-                      <div className="ins-fg">
-                        <label>Provider Name</label>
+                        <label>Treating Provider</label>
                         <input type="text" value={formData.providerName} onChange={e => handleChange('providerName', e.target.value)} />
-                      </div>
-                      <div className="ins-fg">
-                        <label>NPI Number</label>
-                        <input type="text" value={formData.providerNPI} onChange={e => handleChange('providerNPI', e.target.value)} />
                       </div>
                     </div>
                   </div>
 
                   <div className="ins-form-actions">
-                    <button type="submit" className="ins-btn-submit">Submit Pre-Authorization</button>
+                    <button type="submit" className="ins-btn-submit">
+                      Submit to {matchedInsurer?.name || patient.insuranceProvider}
+                    </button>
                     <button type="button" className="ins-btn-secondary" onClick={() => exportInsuranceFormPDF(formData)}>Download PDF</button>
                   </div>
                 </form>
 
-                {/* Right: Parity + Precedents */}
+                {/* Right: Parity + Precedents + Evidence */}
                 <div className="ins-parity-col">
                   <div className="ins-parity-card">
                     <div className="ins-parity-header">
@@ -262,7 +368,7 @@ export default function InsuranceForm() {
                           <span className="ins-pa-count">{parityViolations.length}</span>
                           <div>
                             <strong>Parity Violation{parityViolations.length > 1 ? 's' : ''} Detected</strong>
-                            <p>MHPAEA compliance issues found</p>
+                            <p>MHPAEA compliance issues found for {matchedInsurer?.name || patient.insuranceProvider}</p>
                           </div>
                         </div>
                         <div className="ins-violations">
@@ -300,19 +406,19 @@ export default function InsuranceForm() {
                   </div>
 
                   <div className="ins-sessions-card">
-                    <h3>Evidence: {sessions.length} Sessions</h3>
+                    <h3>Clinical Evidence Summary</h3>
                     <div className="ins-evidence-stats">
+                      <div className="ins-ev-stat">
+                        <span className="ins-ev-val">{sessions.length}</span>
+                        <span className="ins-ev-label">Sessions</span>
+                      </div>
                       <div className="ins-ev-stat">
                         <span className="ins-ev-val">{avgStress.toFixed(1)}</span>
                         <span className="ins-ev-label">Avg Stress</span>
                       </div>
                       <div className="ins-ev-stat">
                         <span className="ins-ev-val">{analytics.filter(a => a.thresholdMet).length}</span>
-                        <span className="ins-ev-label">Threshold Met</span>
-                      </div>
-                      <div className="ins-ev-stat">
-                        <span className="ins-ev-val">{sessions.filter(s => s.result.crisis_flag).length}</span>
-                        <span className="ins-ev-label">Crisis Flags</span>
+                        <span className="ins-ev-label">Above Threshold</span>
                       </div>
                     </div>
                   </div>
@@ -327,22 +433,43 @@ export default function InsuranceForm() {
                 <div className="ins-check-icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
-                <h2>Pre-Authorization Submitted</h2>
-                <p>Sent to {patient?.insuranceProvider || 'insurer'} for review. Expected response in 5-10 business days.</p>
+                <h2>Claim Submitted to {matchedInsurer?.name || patient.insuranceProvider}</h2>
+                <p>
+                  Pre-authorization for {patient.name} sent for review.
+                  {matchedInsurer && ` Expected processing time: ${matchedInsurer.policies.avgProcessing}.`}
+                </p>
 
                 <div className="ins-submitted-amount">
-                  <span className="ins-sa-label">Estimated coverage</span>
+                  <span className="ins-sa-label">Requested coverage</span>
                   <span className="ins-sa-val">${estimatedCost.toLocaleString()}</span>
                 </div>
 
-                <div className="ins-denial-sim">
-                  <h4>Test the Reclaimant Engine</h4>
-                  <p>Simulate a denial to see AI-powered auto-appeal generation with precedent matching.</p>
-                  <button className="ins-btn-deny" onClick={() => setStep('denied')}>Simulate Denial</button>
+                <div className="ins-submitted-details">
+                  <div className="ins-sd-row">
+                    <span>Patient</span><strong>{patient.name}</strong>
+                  </div>
+                  <div className="ins-sd-row">
+                    <span>Insurer</span><strong>{patient.insuranceProvider}</strong>
+                  </div>
+                  <div className="ins-sd-row">
+                    <span>Network status</span><strong className={inNetwork ? 'ins-sd-green' : 'ins-sd-amber'}>{inNetwork ? 'In-network' : 'Out-of-network'}</strong>
+                  </div>
+                  <div className="ins-sd-row">
+                    <span>Sessions attached</span><strong>{sessions.length}</strong>
+                  </div>
+                  <div className="ins-sd-row">
+                    <span>Parity violations flagged</span><strong>{parityViolations.length}</strong>
+                  </div>
                 </div>
 
-                <button className="ins-btn-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
-                  Back to {patient ? patient.name : 'Dashboard'}
+                <div className="ins-denial-sim">
+                  <h4>Demo: Simulate a Denial</h4>
+                  <p>In production, denials arrive in 5-30 days. For this demo, simulate a denial to see the Reclaimant auto-appeal engine.</p>
+                  <button className="ins-btn-deny" onClick={() => setStep('denied')}>Simulate Insurer Denial</button>
+                </div>
+
+                <button className="ins-btn-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>
+                  Back to {patient.name}
                 </button>
               </div>
             </motion.div>
@@ -351,9 +478,14 @@ export default function InsuranceForm() {
           {step === 'denied' && (
             <motion.div key="denied" className="ins-denied-view" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="ins-denial-banner">
-                <h2>Claim Denied</h2>
+                <h2>Claim Denied by {matchedInsurer?.name || patient.insuranceProvider}</h2>
                 <p>"Insufficient medical necessity documentation for requested mental health services."</p>
-                <span className="ins-denial-code">Denial Code: MN-4021</span>
+                <div className="ins-denial-meta">
+                  <span className="ins-denial-code">Denial Code: MN-4021</span>
+                  {matchedInsurer && (
+                    <span className="ins-denial-window">Appeal window: {matchedInsurer.policies.appealWindow}</span>
+                  )}
+                </div>
               </div>
 
               <div className="ins-reclaimant">
@@ -366,16 +498,25 @@ export default function InsuranceForm() {
                   <div className="ins-recl-step ins-rs-done">
                     <span className="ins-rs-num">1</span>
                     <div>
-                      <strong>Denial NLP Scan</strong>
-                      <p>Parsed denial text. Parity violation check triggered{patient?.isNonverbal ? ' (nonverbal = protected class)' : ''}.</p>
+                      <strong>Denial Analysis</strong>
+                      <p>Parsed denial reason via NLP. Denial code MN-4021 maps to "medical necessity" category. {patient.isNonverbal ? 'Patient is nonverbal — MHPAEA protected class applies.' : 'Checking parity compliance.'}</p>
                     </div>
                   </div>
 
                   <div className="ins-recl-step ins-rs-done">
                     <span className="ins-rs-num">2</span>
                     <div>
+                      <strong>Parity Violation Check</strong>
+                      <p>{parityViolations.length} MHPAEA violation{parityViolations.length !== 1 ? 's' : ''} detected against {matchedInsurer?.name || patient.insuranceProvider}.
+                      {matchedInsurer && ` This insurer has a ${matchedInsurer.policies.denialRate} MH denial rate and is ${matchedInsurer.policies.parityCompliant === 'Yes' ? '' : 'not fully '}parity compliant.`}</p>
+                    </div>
+                  </div>
+
+                  <div className="ins-recl-step ins-rs-done">
+                    <span className="ins-rs-num">3</span>
+                    <div>
                       <strong>Precedent Match</strong>
-                      <p>{matchedPrecedents.length} cases found from 15-year litigation database.</p>
+                      <p>{matchedPrecedents.length} relevant cases from 15-year litigation database.</p>
                       <div className="ins-recl-cases">
                         {matchedPrecedents.map((p, i) => (
                           <div key={i} className="ins-recl-case">
@@ -388,22 +529,25 @@ export default function InsuranceForm() {
                   </div>
 
                   <div className={`ins-recl-step ${appealGenerated ? 'ins-rs-done' : 'ins-rs-pending'}`}>
-                    <span className="ins-rs-num">3</span>
+                    <span className="ins-rs-num">4</span>
                     <div>
                       <strong>Generate Appeal Letter</strong>
                       {!appealGenerated ? (
                         <button className="ins-btn-generate" onClick={() => setAppealGenerated(true)}>Generate Appeal</button>
                       ) : (
                         <motion.div className="ins-appeal-letter" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                          <p><strong>To:</strong> {patient?.insuranceProvider || 'Insurance'} Compliance Officer</p>
-                          <p><strong>Re:</strong> {formData.patientName || 'Patient'} — Denial Code MN-4021</p>
+                          <p><strong>To:</strong> {matchedInsurer?.name || patient.insuranceProvider} — Appeals & Grievances Dept.</p>
+                          <p><strong>Re:</strong> Appeal of Denial MN-4021 — {formData.patientName}, ID {formData.insuranceId}</p>
+                          <p><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                           <hr />
-                          <p>This appeal cites direct violations of the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
-                          <p><strong>Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions. Average stress: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} sessions.</p>
-                          <p><strong>Legal basis:</strong> {parityViolations.map(v => v.code).join(', ') || 'MHPAEA § 712'}. Precedent: {matchedPrecedents.map(p => p.case).join('; ')}.</p>
-                          <p><strong>Demand:</strong> Approve requested services within 30 days.</p>
+                          <p>Dear Appeals Officer,</p>
+                          <p>We are writing to formally appeal the denial of pre-authorization for {formData.patientName} under the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
+                          <p><strong>Clinical Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions via VoiceCanvas. Average stress score: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} of {sessions.length} sessions. {sessions.filter(s => s.result.crisis_flag).length > 0 ? `Crisis flags triggered in ${sessions.filter(s => s.result.crisis_flag).length} session(s).` : ''}</p>
+                          <p><strong>Parity Violations:</strong> {parityViolations.map(v => `${v.type} (${v.code})`).join('; ') || 'None identified'}.</p>
+                          <p><strong>Legal Precedent:</strong> {matchedPrecedents.map(p => `${p.case} — ${p.outcome}`).join('; ')}. Average win rate: {avgWinRate}%.</p>
+                          <p><strong>Demand:</strong> We request immediate approval of the requested services within 30 days per {matchedInsurer?.policies.appealWindow || '180 days'} appeal window requirements.</p>
                           <div className="ins-appeal-footer">
-                            Win probability: <strong>{avgWinRate}%</strong>
+                            Estimated appeal success: <strong>{avgWinRate}%</strong>
                           </div>
                         </motion.div>
                       )}
@@ -412,23 +556,23 @@ export default function InsuranceForm() {
 
                   {appealGenerated && (
                     <div className={`ins-recl-step ${appealSubmitted ? 'ins-rs-done' : 'ins-rs-pending'}`}>
-                      <span className="ins-rs-num">4</span>
+                      <span className="ins-rs-num">5</span>
                       <div>
                         <strong>Submit Appeal</strong>
                         {!appealSubmitted ? (
-                          <button className="ins-btn-generate" onClick={() => setAppealSubmitted(true)}>Submit to {patient?.insuranceProvider || 'Insurer'}</button>
+                          <button className="ins-btn-generate" onClick={() => setAppealSubmitted(true)}>Submit to {matchedInsurer?.name || patient.insuranceProvider}</button>
                         ) : (
                           <motion.div className="ins-appeal-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <p>Appeal submitted. Response expected within 30-45 days.</p>
+                            <p>Appeal submitted to {matchedInsurer?.name || patient.insuranceProvider}. Expected response within 30-45 days.</p>
                             <div className="ins-appeal-amount">
-                              Estimated recovery: <strong>${formData.requestedService === 'both' ? '1,200' : '720'}</strong>
+                              Estimated recovery: <strong>${Math.round(estimatedCost * avgWinRate / 100).toLocaleString()}</strong>
                             </div>
                             <div className="ins-appeal-tracker">
                               <div className="ins-at-step ins-at-active">Submitted</div>
                               <div className="ins-at-line" />
                               <div className="ins-at-step">Under Review</div>
                               <div className="ins-at-line" />
-                              <div className="ins-at-step">Pending</div>
+                              <div className="ins-at-step">Decision</div>
                             </div>
                           </motion.div>
                         )}
@@ -438,8 +582,8 @@ export default function InsuranceForm() {
                 </div>
               </div>
 
-              <button className="ins-btn-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
-                Back to {patient ? patient.name : 'Dashboard'}
+              <button className="ins-btn-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>
+                Back to {patient.name}
               </button>
             </motion.div>
           )}
