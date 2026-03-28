@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getPatientById } from '../data/mockPatients';
 import { getReplayForPatient, getEmotionColor, getValenceLabel } from '../data/mockReplay';
+import { getAzureReplayConfig, fetchLatestReplayMeta, buildBlobUrl } from '../utils/azureReplay';
 import './SessionReplay.css';
 
 export default function SessionReplay() {
@@ -12,7 +13,45 @@ export default function SessionReplay() {
   const timelineRef = useRef(null);
 
   const patient = getPatientById(patientId);
-  const replay = useMemo(() => (patient ? getReplayForPatient(patient) : null), [patient]);
+  const baseReplay = useMemo(() => (patient ? getReplayForPatient(patient) : null), [patient]);
+  const [azureReplay, setAzureReplay] = useState(null);
+
+  useEffect(() => {
+    if (!patient?.id) {
+      setAzureReplay(null);
+      return;
+    }
+    let cancelled = false;
+    setAzureReplay(null);
+    (async () => {
+      const meta = await fetchLatestReplayMeta(patient.id);
+      if (cancelled || !meta?.videoPath) return;
+      const cfg = getAzureReplayConfig();
+      if (!cfg) return;
+      const videoUrl = buildBlobUrl(cfg.account, cfg.container, meta.videoPath, cfg.sas);
+      setAzureReplay({
+        videoUrl,
+        sessionId: meta.sessionId,
+        sessionDate: meta.sessionDate,
+        promptTitle: meta.promptTitle,
+        sessionStressScore: meta.stressScore,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [patient?.id]);
+
+  const replay = useMemo(() => {
+    if (!baseReplay) return null;
+    if (!azureReplay) return baseReplay;
+    return {
+      ...baseReplay,
+      videoUrl: azureReplay.videoUrl,
+      sessionId: azureReplay.sessionId ?? baseReplay.sessionId,
+      sessionDate: azureReplay.sessionDate ?? baseReplay.sessionDate,
+      promptTitle: azureReplay.promptTitle || baseReplay.promptTitle,
+      sessionStressScore: azureReplay.sessionStressScore != null ? azureReplay.sessionStressScore : baseReplay.sessionStressScore,
+    };
+  }, [baseReplay, azureReplay]);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -38,7 +77,7 @@ export default function SessionReplay() {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [replay?.videoUrl]);
 
   useEffect(() => {
     if (!timelineRef.current || !currentEmotion) return;
@@ -59,7 +98,7 @@ export default function SessionReplay() {
     else videoRef.current.pause();
   };
 
-  if (!patient) {
+  if (!patient || !replay) {
     return (
       <div className="sr-page">
         <div className="sr-not-found">
@@ -109,6 +148,7 @@ export default function SessionReplay() {
         <div className="sr-video-col">
           <div className="sr-video-wrap">
             <video
+              key={replay.videoUrl}
               ref={videoRef}
               src={replay.videoUrl}
               className="sr-video"
