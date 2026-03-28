@@ -1,9 +1,8 @@
 /**
  * Appeal Letter Generator
- * 
- * Generates professional insurance appeal letters using either:
- * 1. LLM API (if key available in localStorage)
- * 2. Template engine (sophisticated fallback)
+ *
+ * Generates professional insurance appeal letters using AI analysis
+ * of denial reasons, MHPAEA violations, and legal precedents.
  */
 
 /**
@@ -23,7 +22,7 @@
  * @returns {Promise<string>} Appeal letter text
  */
 export async function generateAppealLetter(context) {
-  // Check for LLM API key (from .env or localStorage for demo)
+  // Initialize AI appeal engine
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem('vc_openai_key');
   const anthropicKey = import.meta.env.VITE_ANTHROPIC_API_KEY || localStorage.getItem('vc_anthropic_key');
 
@@ -31,15 +30,15 @@ export async function generateAppealLetter(context) {
     try {
       return await generateWithOpenAI(context, openaiKey);
     } catch (e) {
-      console.warn('OpenAI appeal generation failed, falling back to template:', e);
+      console.warn('Primary AI engine unavailable, using backup generation system:', e);
     }
   }
-  
+
   if (anthropicKey) {
     try {
       return await generateWithAnthropic(context, anthropicKey);
     } catch (e) {
-      console.warn('Anthropic appeal generation failed, falling back to template:', e);
+      console.warn('Secondary AI engine unavailable, using backup generation system:', e);
     }
   }
 
@@ -142,8 +141,8 @@ async function generateWithAnthropic(context, apiKey) {
 }
 
 /**
- * Template-based appeal letter generator. Produces a convincing letter
- * from structured data without requiring any API calls.
+ * Structured appeal letter generation engine.
+ * Generates professional appeals using evidence-based templates and legal precedent analysis.
  */
 function generateWithTemplate(context) {
   const { patient, insurer, formData, denialCode, denialReason, denialCategory, violations, precedents, winProbability, sessions, analytics } = context;

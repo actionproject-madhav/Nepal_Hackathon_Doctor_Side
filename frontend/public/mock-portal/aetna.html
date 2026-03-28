@@ -205,7 +205,7 @@
 </head>
 <body>
   <div class="automation-indicator" id="automation-indicator">
-    VoiceCanvas automation active...
+    VoiceCanvas Assistant Active
   </div>
 
   <div class="header">
@@ -374,7 +374,8 @@
 
     document.getElementById('preauth-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      alert('Authorization submitted to Aetna!\n\nReference: AUTH-' + Math.random().toString(36).substring(2, 10).toUpperCase());
+      const refId = 'AUTH-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      alert('Pre-authorization submitted to Aetna.\n\nReference ID: ' + refId + '\n\nExpected review time: 10-14 business days.\n\nStatus updates available through Availity provider portal.');
     });
   </script>
 </body>

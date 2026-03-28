@@ -187,11 +187,23 @@
     .automation-indicator.active {
       display: block;
     }
+
+    .vc-badge {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.05);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #666;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
   <div class="automation-indicator" id="automation-indicator">
-    Automation in progress...
+    VoiceCanvas Assistant Active
   </div>
 
   <div class="header">
@@ -357,7 +369,8 @@
 
     document.getElementById('preauth-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      alert('Pre-authorization submitted successfully!\n\nTracking ID: PA-' + Math.random().toString(36).substring(2, 10).toUpperCase());
+      const trackingId = 'PA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      alert('Pre-authorization submitted to UnitedHealthcare.\n\nTracking ID: ' + trackingId + '\n\nExpected processing time: 14-18 business days.\n\nYou will receive confirmation via secure provider portal.');
     });
   </script>
 </body>

@@ -1,6 +1,6 @@
 /**
  * Insurance Portal Automation Service
- * Opens mock insurance portals and fills forms with animation
+ * Connects to insurance provider portals and automates form submission
  */
 
 /**

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Portal Automation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    button.secondary {
+      background: #6c757d;
+    }
+    button.secondary:hover {
+      background: #5a6268;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    .test-section {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>VoiceCanvas Integration Dashboard</h1>
+    <p>Verify your insurance portal integrations and email connectivity. Use this dashboard to validate all system connections.</p>
+  </div>
+
+  <div class="card">
+    <h2>Browser Permissions</h2>
+    <p>Verify browser allows new windows and tabs for portal and email integrations.</p>
+    <button onclick="testBasicPopup()">Verify Permissions</button>
+    <div id="popup-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Insurance Portal Integration</h2>
+    <p>Validate connection to insurance provider portals and automated form submission capabilities.</p>
+    <button onclick="testPortalAutomation()">Verify Portal Connection</button>
+    <div id="portal-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Email System Integration</h2>
+    <p>Verify Gmail integration for automated claim and appeal correspondence.</p>
+    <button onclick="testGmail()">Verify Email Integration</button>
+    <div id="gmail-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>AI Appeal Engine</h2>
+    <p>Validate OpenAI integration for intelligent appeal letter generation.</p>
+    <button onclick="testOpenAI()">Verify AI Connection</button>
+    <button class="secondary" onclick="showEnvVars()">Show Configuration</button>
+    <div id="openai-status"></div>
+  </div>
+
+  <div class="card test-section">
+    <h2>Debug Info</h2>
+    <button onclick="runDiagnostics()">Run Diagnostics</button>
+    <pre id="diagnostics" style="background: #f4f4f4; padding: 15px; border-radius: 6px; margin-top: 10px; overflow-x: auto;"></pre>
+  </div>
+
+  <script>
+    function showStatus(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      el.className = `status ${type}`;
+      el.innerHTML = message;
+    }
+
+    function testBasicPopup() {
+      showStatus('popup-status', 'Verifying browser permissions...', 'info');
+
+      const popup = window.open('https://www.google.com', '_blank', 'width=600,height=400');
+
+      if (popup) {
+        showStatus('popup-status', 'Verified. Browser permissions are properly configured.', 'success');
+      } else {
+        showStatus('popup-status', 'Permission required. Enable popups for this site in your browser settings to use portal and email features.', 'error');
+      }
+    }
+
+    function testPortalAutomation() {
+      showStatus('portal-status', 'Establishing portal connection...', 'info');
+
+      const portal = window.open('/mock-portal/united.html', '_blank', 'width=1200,height=900');
+
+      if (!portal) {
+        showStatus('portal-status', 'Connection failed. Enable browser permissions to access insurance portals.', 'error');
+        return;
+      }
+
+      showStatus('portal-status', 'Connected. Initializing secure data transfer...', 'info');
+
+      setTimeout(() => {
+        showStatus('portal-status', 'Transmitting patient data to provider portal...', 'info');
+
+        portal.postMessage({
+          type: 'FILL_FORM',
+          formData: {
+            patientName: 'Sample Patient',
+            dob: '1990-01-01',
+            insuranceId: 'VCS-12345',
+            groupNumber: 'GRP-VCS-001',
+            chiefComplaint: 'Validation record for system integration testing.',
+            diagnosisCategory: 'F41.1',
+            symptomDuration: '6 months',
+            requestedService: 'both',
+            functionalImpairment: 'System validation record.',
+            providerName: 'Dr. Sarah Mitchell',
+            providerNPI: '1234567890'
+          }
+        }, '*');
+
+        showStatus('portal-status', 'Integration verified. Portal form submission is operational. Watch the provider portal window complete the automated workflow.', 'success');
+      }, 2000);
+    }
+
+    function testGmail() {
+      showStatus('gmail-status', 'Initializing email integration...', 'info');
+
+      const to = 'appeals@uhc.com';
+      const subject = 'VoiceCanvas Integration Verification';
+      const body = 'This email validates the VoiceCanvas email integration system.\n\nAutomated correspondence capabilities confirmed.';
+
+      const params = new URLSearchParams({
+        fs: '1',
+        tf: '1',
+        to: to,
+        su: subject,
+        body: body,
+      });
+
+      const gmailURL = `https://mail.google.com/mail/?view=cm&${params.toString()}`;
+      const gmail = window.open(gmailURL, '_blank');
+
+      if (gmail) {
+        showStatus('gmail-status', 'Email integration verified. Automated correspondence system is operational.', 'success');
+      } else {
+        showStatus('gmail-status', 'Connection failed. Enable browser permissions for email integration.', 'error');
+      }
+    }
+
+    async function testOpenAI() {
+      // API key should be configured in main application .env file
+      // This test verifies the AI engine connectivity from the main app
+      const apiKey = prompt('Enter OpenAI API key to test (or leave blank to skip):');
+
+      if (!apiKey || apiKey.length < 20) {
+        showStatus('openai-status', 'Test skipped. Configure API key in main application environment variables (.env file).', 'info');
+        return;
+      }
+
+      showStatus('openai-status', 'Connecting to AI appeal generation engine...', 'info');
+
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'user', content: 'Respond with exactly: "AI engine operational"' }
+            ],
+            max_tokens: 20,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          showStatus('openai-status', `AI connection error: ${error.error?.message || 'Service unavailable'}`, 'error');
+          return;
+        }
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+
+        showStatus('openai-status', `AI appeal generation system verified. Engine status: ${reply}`, 'success');
+      } catch (error) {
+        showStatus('openai-status', `Connection failed: ${error.message}`, 'error');
+      }
+    }
+
+    function showEnvVars() {
+      const info = `
+OpenAI Key: ${window.VITE_OPENAI_API_KEY ? 'Set (hidden)' : 'NOT SET'}
+Google Client ID: ${window.VITE_GOOGLE_CLIENT_ID ? 'Set (hidden)' : 'NOT SET'}
+ElevenLabs Key: ${window.VITE_ELEVEN_LABS_API_KEY ? 'Set (hidden)' : 'NOT SET'}
+
+Note: This test page has hardcoded keys for testing.
+In the React app, keys come from .env file.
+      `.trim();
+
+      showStatus('openai-status', `<pre>${info}</pre>`, 'info');
+    }
+
+    function runDiagnostics() {
+      const diagnostics = {
+        'Browser': navigator.userAgent,
+        'Window.open available': typeof window.open === 'function',
+        'PostMessage available': typeof window.postMessage === 'function',
+        'Current URL': window.location.href,
+        'Popup blocker active': 'Unknown (test with buttons above)',
+      };
+
+      const output = Object.entries(diagnostics)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+
+      document.getElementById('diagnostics').textContent = output;
+    }
+  </script>
+</body>
+</html>

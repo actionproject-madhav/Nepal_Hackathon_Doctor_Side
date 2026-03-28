@@ -220,7 +220,7 @@ export async function createGmailDraftWithAPI(appealLetter, insurer, formData) {
 }
 
 /**
- * Simple fallback: Open mailto link
+ * Alternative email method using system default mail client
  */
 export function openMailtoLink(appealLetter, insurer, formData) {
   const to = getInsurerEmail(insurer);
