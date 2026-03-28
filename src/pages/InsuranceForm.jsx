@@ -15,7 +15,7 @@ const PRECEDENT_DB = [
 export default function InsuranceForm() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { patientId, result: passedResult } = location.state || {};
+  const { patientId, result: passedResult, insurerOverride } = location.state || {};
 
   const patient = patientId ? getPatientById(patientId) : null;
   const analytics = patient ? getPatientAnalytics(patient) : [];
@@ -31,6 +31,7 @@ export default function InsuranceForm() {
     patientName: patient?.name || '',
     dob: patient ? (patient.age === 8 ? '2018-03-15' : patient.age === 16 ? '2010-06-22' : patient.age === 28 ? '1998-01-10' : patient.age === 45 ? '1981-09-05' : '1954-11-30') : '',
     insuranceId: patient ? `INS-${patient.id.replace('pt-', '').toUpperCase()}-${Math.floor(Math.random() * 9000 + 1000)}` : '',
+    insurerName: insurerOverride?.name || patient?.insuranceProvider || '',
     groupNumber: patient?.insuranceProvider ? `GRP-${patient.insuranceProvider.substring(0, 3).toUpperCase()}-001` : '',
     providerName: 'Dr. Sarah Mitchell, PhD, LCSW',
     providerNPI: '1234567890',
@@ -109,7 +110,7 @@ export default function InsuranceForm() {
         <nav className="ins-nav-pills">
           <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
           <button className="ins-nav-pill ins-nav-active">Claims</button>
-          <button className="ins-nav-pill">Documents</button>
+          <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Integrations</button>
         </nav>
         <div className="ins-topnav-right">
           <div className="ins-user-avatar">Dr</div>
@@ -131,7 +132,7 @@ export default function InsuranceForm() {
                       <div className="ins-meta-avatar">{patient.avatar}</div>
                       <div>
                         <span className="ins-meta-name">{patient.name}</span>
-                        <span className="ins-meta-email">{patient.insuranceProvider}</span>
+                        <span className="ins-meta-email">{formData.insurerName || patient.insuranceProvider}</span>
                       </div>
                     </div>
                   )}
@@ -328,7 +329,7 @@ export default function InsuranceForm() {
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
                 <h2>Pre-Authorization Submitted</h2>
-                <p>Sent to {patient?.insuranceProvider || 'insurer'} for review. Expected response in 5-10 business days.</p>
+                <p>Sent to {formData.insurerName || patient?.insuranceProvider || 'insurer'} for review. Expected response in 5-10 business days.</p>
 
                 <div className="ins-submitted-amount">
                   <span className="ins-sa-label">Estimated coverage</span>
