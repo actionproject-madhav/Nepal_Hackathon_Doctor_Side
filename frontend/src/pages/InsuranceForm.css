@@ -1,9 +1,231 @@
-/* ===== Insurance / Claims — Light Theme ===== */
+/* ===== Insurance / Claims — Clean Compact Layout ===== */
 .ins-page {
   min-height: 100vh;
   background: var(--bg-body);
   color: var(--text-primary);
   font-family: var(--font-body);
+}
+
+/* Compact Header */
+.ins-header-compact {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 24px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ins-hc-patient {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ins-hc-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal-500), var(--teal-600));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+}
+
+.ins-hc-patient h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+}
+
+.ins-hc-patient p {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.ins-hc-meta {
+  display: flex;
+  gap: 32px;
+}
+
+.ins-hc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.ins-hc-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ins-hc-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+/* Main Grid Layout */
+.ins-main-grid {
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+
+.ins-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Evidence Compact */
+.ins-evidence-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ins-ec-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--gray-50);
+  border-radius: 6px;
+}
+
+.ins-ec-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.ins-ec-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Sidebar Compact */
+.ins-sidebar-compact {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+/* Golden Button */
+.ins-golden-button {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.ins-golden-button:hover {
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+.ins-golden-button:active {
+  transform: translateY(0);
+}
+
+.ins-golden-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ins-gb-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ins-gb-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.ins-gb-title {
+  font-size: 18px;
+  font-weight: 700;
+  display: block;
+}
+
+.ins-gb-subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+  display: block;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Sidebar Info */
+.ins-sb-info {
+  margin-top: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+}
+
+.ins-sb-info p {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0 0 12px 0;
+}
+
+.ins-sb-info ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.ins-sb-info li {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.ins-sb-info li:before {
+  content: "✓";
+  position: absolute;
+  left: -20px;
+  color: var(--teal-500);
+  font-weight: 700;
 }
 
 /* ===== Top Nav ===== */
