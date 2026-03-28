@@ -110,9 +110,9 @@ export default function ClinicianDashboard() {
       <aside className="med-sidebar">
         <div className="med-sb-logo" onClick={() => navigate('/')}>
           <div className="med-sb-logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
           </div>
-          <span className="med-sb-logo-text">Nexus</span>
+          <span className="med-sb-logo-text">MindHaven</span>
         </div>
 
         <nav className="med-sb-nav">
@@ -145,8 +145,8 @@ export default function ClinicianDashboard() {
           <span className="med-sb-dr-name">Dr. Sarah Mitchell</span>
           <span className="med-sb-dr-role">Lead Clinician</span>
           <div className="med-sb-dr-actions">
-            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
-            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" /></svg></button>
+            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg></button>
           </div>
         </div>
       </aside>
@@ -156,17 +156,17 @@ export default function ClinicianDashboard() {
         {/* Top Bar */}
         <header className="med-topbar">
           <div className="med-search-pill">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
             <input type="text" placeholder="Search patients, invoice, appointments etc..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          
+
           <div className="med-topbar-right">
             <button className="med-topbar-icon-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
               {stats.crisisFlags > 0 && <span className="med-notif-dot" />}
             </button>
             <button className="med-topbar-icon-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><path d="M3 8h18M3 16h18"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2" ry="2" /><path d="M3 8h18M3 16h18" /></svg>
             </button>
           </div>
         </header>
@@ -200,15 +200,15 @@ export default function ClinicianDashboard() {
         </div>
 
         {/* Dynamic Grid Content */}
-        <div 
-          className="med-content" 
-          style={{ 
-            display: activeNav === 'dashboard' ? 'grid' : 'flex', 
+        <div
+          className="med-content"
+          style={{
+            display: activeNav === 'dashboard' ? 'grid' : 'flex',
             flexDirection: 'column',
             gap: '20px'
           }}
         >
-          
+
           {activeNav === 'dashboard' && (
             <div style={{ display: 'contents', gap: '20px', flexWrap: 'wrap' }}>
               {/* 1. Overall Performance (Stress Score) */}
@@ -219,11 +219,11 @@ export default function ClinicianDashboard() {
                     ↗ {((stats.totalSessions / 100) * 100).toFixed(0)}%
                   </button>
                 </div>
-                
+
                 <div className="mc-gauge-container" style={{ margin: '10px 0 20px' }}>
                   <div className="mc-gauge-bg" />
-                  <div 
-                    className="mc-gauge-fill" 
+                  <div
+                    className="mc-gauge-fill"
                     style={{ transform: `rotate(${-90 + ((avgStress / 10) * 180)}deg)` }}
                   />
                   <div className="mc-gauge-inner">
@@ -233,11 +233,11 @@ export default function ClinicianDashboard() {
                     </span>
                   </div>
                 </div>
-                
+
                 <p className="mc-overall-text">
                   <strong>{patient.name.split(' ')[0]}</strong> has an average stress score of {avgStress.toFixed(1)}/10 across {sessions.length} sessions.
                 </p>
-                
+
                 <button className="btn btn-primary" onClick={() => navigate(`/dashboard/${patient.id}`)}>
                   Check Full Report
                 </button>
@@ -252,7 +252,7 @@ export default function ClinicianDashboard() {
                     <option>Monthly</option>
                   </select>
                 </div>
-                
+
                 <div style={{ display: 'flex', gap: '6px', marginBottom: 'auto' }}>
                   <button className="badge" style={{ background: 'var(--gray-900)', color: 'white' }}>Stress Score</button>
                   <button className="badge badge-blue">Indicators</button>
@@ -262,11 +262,11 @@ export default function ClinicianDashboard() {
                 <div className="mc-chart-wrapper">
                   <div className="mc-chart-line" />
                   {stressTrend.map((pt, i) => {
-                    const heightPct = (pt.score / 10) * 85; 
+                    const heightPct = (pt.score / 10) * 85;
                     const isMax = pt.score === Math.max(...stressTrend.map(p => p.score));
                     return (
                       <div key={i} className="mc-chart-col">
-                        <div 
+                        <div
                           className={`mc-chart-bar ${isMax ? 'active' : ''}`}
                           style={{ height: `${Math.max(10, heightPct)}%` }}
                         >
@@ -297,9 +297,9 @@ export default function ClinicianDashboard() {
                   </div>
                   <h3 className="mc-pc-name">{patient.name}</h3>
                   <p className="mc-pc-desc">{patient.age}yrs old • {patient.languageLabel}</p>
-                  
+
                   <button className="mc-pc-action" onClick={() => navigate(`/dashboard/${patient.id}`)}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" /></svg>
                   </button>
                 </div>
 
@@ -325,9 +325,9 @@ export default function ClinicianDashboard() {
               <div className="mc-widget mc-queue" style={{ flex: activeNav === 'patients' ? '2.5' : 'unset' }}>
                 <div className="mc-queue-filters">
                   {['All', 'High Risk', 'New'].map(tab => (
-                    <button 
-                      key={tab} 
-                      className={`mc-qf ${queueFilter === tab ? 'active' : ''}`} 
+                    <button
+                      key={tab}
+                      className={`mc-qf ${queueFilter === tab ? 'active' : ''}`}
                       onClick={() => setQueueFilter(tab)}
                     >
                       {tab === 'All' ? 'Patient Queue' : tab}
@@ -357,7 +357,7 @@ export default function ClinicianDashboard() {
                         const pLatest = p.sessions[p.sessions.length - 1];
                         const riskClass = p.riskLevel === 'high' ? 'high' : p.riskLevel === 'moderate' ? 'mod' : 'low';
                         const score = pLatest ? pLatest.stressScore.toFixed(1) : '-';
-                        
+
                         return (
                           <tr key={p.id} className={isActive ? 'selected' : ''} onClick={() => setSelectedPatient(p)}>
                             <td>
@@ -416,7 +416,7 @@ export default function ClinicianDashboard() {
               <div className="mc-net-filters">
                 <div className="mc-net-tabs">
                   {['All', 'In-network', 'Out-of-network'].map(t => (
-                    <button 
+                    <button
                       key={t}
                       className={`mc-net-tab ${netFilter === t ? 'active' : ''}`}
                       onClick={() => setNetFilter(t)}
@@ -426,7 +426,7 @@ export default function ClinicianDashboard() {
                   ))}
                 </div>
                 <div className="med-search-pill" style={{ margin: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                   <input type="text" placeholder="Search providers..." value={netSearch} onChange={e => setNetSearch(e.target.value)} />
                 </div>
               </div>
@@ -448,7 +448,7 @@ export default function ClinicianDashboard() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <p className="mc-net-desc">{provider.desc}</p>
 
                     <div className="mc-net-policy-grid">
@@ -461,18 +461,18 @@ export default function ClinicianDashboard() {
                         <span className="mc-npi-val">{provider.policies.avgProcessing}</span>
                       </div>
                     </div>
-                    
+
                     <div className="mc-net-footer">
                       <div className="mc-net-stats">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                         <span>Verified</span>
                       </div>
                       <label className="mc-net-toggle">
-                        <input 
-                          type="checkbox" 
-                          checked={provider.connected} 
+                        <input
+                          type="checkbox"
+                          checked={provider.connected}
                           onChange={(e) => {
-                            const newConnected = e.target.checked 
+                            const newConnected = e.target.checked
                               ? [...providers.filter(p => p.connected).map(p => p.id), provider.id]
                               : providers.filter(p => p.connected && p.id !== provider.id).map(p => p.id);
                             setConnectedIds(newConnected);
@@ -492,7 +492,7 @@ export default function ClinicianDashboard() {
           {['settings', 'help'].includes(activeNav) && (
             <div className="mc-widget" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)', background: 'linear-gradient(to bottom right, #fff, #f8fafc)' }}>
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--purple-50)', color: 'var(--purple-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               </div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
                 {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)} Dashboard
