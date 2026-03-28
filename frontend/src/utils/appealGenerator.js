@@ -23,9 +23,9 @@
  * @returns {Promise<string>} Appeal letter text
  */
 export async function generateAppealLetter(context) {
-  // Check for LLM API key
-  const openaiKey = localStorage.getItem('vc_openai_key');
-  const anthropicKey = localStorage.getItem('vc_anthropic_key');
+  // Check for LLM API key (from .env or localStorage for demo)
+  const openaiKey = import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem('vc_openai_key');
+  const anthropicKey = import.meta.env.VITE_ANTHROPIC_API_KEY || localStorage.getItem('vc_anthropic_key');
 
   if (openaiKey) {
     try {

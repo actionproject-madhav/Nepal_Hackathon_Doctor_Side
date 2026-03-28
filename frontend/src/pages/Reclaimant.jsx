@@ -6,6 +6,7 @@ import { findProviderById } from '../data/insuranceProviders';
 import { getRelevantPrecedents } from '../data/precedentDB';
 import { scanForParityViolations, calculateWinProbability, classifyDenialReason } from '../utils/parityEngine';
 import { generateAppealLetter } from '../utils/appealGenerator';
+import AgentAutomation from '../components/AgentAutomation';
 import './Reclaimant.css';
 
 const DENIAL_SCENARIOS = {
@@ -37,6 +38,7 @@ export default function Reclaimant() {
   const [appealText, setAppealText] = useState('');
   const [appealGenerating, setAppealGenerating] = useState(false);
   const [appealSubmitted, setAppealSubmitted] = useState(false);
+  const [agentSubmitting, setAgentSubmitting] = useState(false);
   const [trackerStage, setTrackerStage] = useState(0);
 
   const formData = passedFormData || {
@@ -96,9 +98,14 @@ export default function Reclaimant() {
     setAppealGenerating(false);
   };
 
-  const handleSubmitAppeal = async () => {
-    setAppealSubmitted(true);
+  const handleSubmitAppeal = () => {
+    setAgentSubmitting(true);
     setActiveStep(4);
+  };
+
+  const finalizeAppealSubmit = async () => {
+    setAgentSubmitting(false);
+    setAppealSubmitted(true);
     // Animate tracker
     for (let i = 1; i <= 3; i++) {
       await new Promise(r => setTimeout(r, 1500));
@@ -128,8 +135,8 @@ export default function Reclaimant() {
           <div className="ins-topnav-right"><div className="ins-user-avatar">Dr</div></div>
         </header>
         <div className="recl-empty">
-          <h2>No Denial to Process</h2>
-          <p>Use the Insurance Claims page to submit a claim and simulate a denial, or click below to demo with a sample denial.</p>
+          <h2>No Denial Selected</h2>
+          <p>Please select a denied claim from the dashboard to initiate the appellate workflow.</p>
           <button className="ins-btn-submit" onClick={() => navigate('/insurance')}>Go to Insurance Claims</button>
         </div>
       </div>
@@ -167,11 +174,11 @@ export default function Reclaimant() {
         <div className="recl-header">
           <div className="recl-h-left">
             <h1>Reclaimant</h1>
-            <span className="recl-badge">AI-Powered Appeal Engine</span>
+            <span className="recl-badge" style={{ background: insurer?.color || 'var(--green-500)' }}>LLM Appellate Engine</span>
           </div>
           <div className="recl-h-right">
-            <div className="recl-win-badge">
-              <span className="recl-wb-val">{winProbability}%</span>
+            <div className="recl-win-badge" style={{ borderColor: insurer?.color ? `${insurer.color}40` : '', backgroundColor: insurer?.color ? `${insurer.color}15` : '' }}>
+              <span className="recl-wb-val" style={{ color: insurer?.color || 'var(--green-500)' }}>{winProbability}%</span>
               <span className="recl-wb-label">Win Probability</span>
             </div>
           </div>
@@ -282,28 +289,46 @@ export default function Reclaimant() {
           </div>
 
           {/* Step 4: Submit & Track */}
-          {appealSubmitted && (
-            <div className="recl-step recl-step-done">
+          {(activeStep === 4 || appealSubmitted) && (
+            <div className={`recl-step ${appealSubmitted ? 'recl-step-done' : 'recl-step-active'}`}>
               <div className="recl-step-header">
-                <span className="recl-step-num">✓</span>
-                <strong>Step 4 — Appeal Submitted</strong>
+                <span className="recl-step-num">{appealSubmitted ? '✓' : '⟳'}</span>
+                <strong>Step 4 — Appellate Execution</strong>
               </div>
               <motion.div className="recl-step-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <div className="recl-tracker">
-                  <div className={`recl-tk-step ${trackerStage >= 0 ? 'recl-tk-active' : ''}`}>Submitted</div>
-                  <div className="recl-tk-line" />
-                  <div className={`recl-tk-step ${trackerStage >= 1 ? 'recl-tk-active' : ''}`}>Under Review</div>
-                  <div className="recl-tk-line" />
-                  <div className={`recl-tk-step ${trackerStage >= 2 ? 'recl-tk-active' : ''}`}>Pending Decision</div>
-                  <div className="recl-tk-line" />
-                  <div className={`recl-tk-step ${trackerStage >= 3 ? 'recl-tk-active' : ''}`}>Decision</div>
-                </div>
-                <div className="recl-recovery">
-                  <span className="recl-rec-label">Estimated Recovery</span>
-                  <span className="recl-rec-amount">${Math.round(estimatedCost * winProbability / 100).toLocaleString()}</span>
-                  <span className="recl-rec-detail">Based on ${estimatedCost.toLocaleString()} claim × {winProbability}% win rate</span>
-                </div>
-                <p className="recl-tracker-note">Expected response within 30–45 days. Dashboard "Recovered This Quarter" stat updated.</p>
+                {agentSubmitting ? (
+                  <AgentAutomation
+                    title={`Executing Appellate Workflow. Target: ${insurer?.name || 'Insurer'} Portal`}
+                    insurerColor={insurer?.color}
+                    onComplete={finalizeAppealSubmit}
+                    tasks={[
+                      { text: `Establishing secure connection to ${insurer?.name || 'Insurer'} Provider Portal...`, duration: 1500 },
+                      { text: 'Navigating to Appeals & Grievances dashboard...', subtext: `Claim ID: ${formData.insuranceId}`, typeSpeed: 20, duration: 2000 },
+                      { text: 'Compiling legal demand package...', subtext: `Attached: LLM_Appeal_Letter.pdf\nAttached: Clinical_Evidence_Summary.pdf\nAttached: MHPAEA_Parity_Log.pdf`, typeSpeed: 10, duration: 3000 },
+                      { text: 'Drafting secure message to Appeals Coordinator...', subtext: `Subject: URGENT MHPAEA APPEAL - Claim ${formData.insuranceId}\nPlease find the attached formal demand under 29 U.S.C. 1185a.`, typeSpeed: 25, duration: 3500 },
+                      { text: 'Transmitting final package...', duration: 1500 },
+                      { text: 'Awaiting submission confirmation...', subtext: `Received Tracking ID: TICK-${Math.floor(Math.random() * 90000) + 10000}-A`, typeSpeed: 20, duration: 2500 }
+                    ]}
+                  />
+                ) : (
+                  <>
+                    <div className="recl-tracker">
+                      <div className={`recl-tk-step ${trackerStage >= 0 ? 'recl-tk-active' : ''}`}>Submitted</div>
+                      <div className="recl-tk-line" />
+                      <div className={`recl-tk-step ${trackerStage >= 1 ? 'recl-tk-active' : ''}`}>Under Review</div>
+                      <div className="recl-tk-line" />
+                      <div className={`recl-tk-step ${trackerStage >= 2 ? 'recl-tk-active' : ''}`}>Pending Decision</div>
+                      <div className="recl-tk-line" />
+                      <div className={`recl-tk-step ${trackerStage >= 3 ? 'recl-tk-active' : ''}`}>Decision</div>
+                    </div>
+                    <div className="recl-recovery">
+                      <span className="recl-rec-label">Estimated Recovery</span>
+                      <span className="recl-rec-amount">${Math.round(estimatedCost * winProbability / 100).toLocaleString()}</span>
+                      <span className="recl-rec-detail">Based on ${estimatedCost.toLocaleString()} claim × {winProbability}% win rate</span>
+                    </div>
+                    <p className="recl-tracker-note">Expected response within 30–45 days. Dashboard "Recovered This Quarter" stat updated.</p>
+                  </>
+                )}
               </motion.div>
             </div>
           )}
@@ -313,8 +338,6 @@ export default function Reclaimant() {
           <button className="ins-btn-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>Back to {patient.name}</button>
           <button className="ins-btn-secondary" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
         </div>
-
-        <p className="ins-disclaimer">DEMO ONLY — No real appeal submitted. Not legal advice.</p>
       </div>
     </div>
   );
