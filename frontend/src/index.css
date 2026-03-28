@@ -93,12 +93,12 @@
   --space-xl: 2rem;
   --space-2xl: 3rem;
 
-  /* Radius — extremely rounded */
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
-  --radius-2xl: 30px;
+  /* Radius — professional SaaS */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
 
   /* Sidebar */

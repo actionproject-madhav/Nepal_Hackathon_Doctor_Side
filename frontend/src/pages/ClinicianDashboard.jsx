@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_PATIENTS, getOverviewStats } from '../data/mockPatients';
 import { DRAWING_PROMPTS } from '../utils/drawingPrompts';
+import { getAllProviders, setConnectedIds } from '../data/insuranceProviders';
 import './ClinicianDashboard.css';
 
 const SIDEBAR_MAIN = [
   { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
   { id: 'patients', label: 'Patients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-  { id: 'sessions', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
 ];
 
 const SIDEBAR_BOTTOM = [
@@ -32,6 +32,42 @@ export default function ClinicianDashboard() {
   const [queueFilter, setQueueFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [profileTab, setProfileTab] = useState('profile');
+
+  // Network Integration State
+  const [netFilter, setNetFilter] = useState('All');
+  const [netSearch, setNetSearch] = useState('');
+  const [providers, setProviders] = useState(() => getAllProviders());
+
+  const toggleConnection = (id) => {
+    setProviders(prev => {
+      const updated = prev.map(p =>
+        p.id === id ? { ...p, connected: !p.connected } : p
+      );
+      setConnectedIds(updated.filter(p => p.connected).map(p => p.id));
+      return updated;
+    });
+  };
+
+  const filteredProviders = useMemo(() => {
+    return providers.filter(p => {
+      const ms = p.name.toLowerCase().includes(netSearch.toLowerCase()) || p.desc.toLowerCase().includes(netSearch.toLowerCase());
+      if (netFilter === 'In-network') return ms && p.connected;
+      if (netFilter === 'Out-of-network') return ms && !p.connected;
+      return ms;
+    });
+  }, [providers, netSearch, netFilter]);
+
+  const patientsPerInsurer = useMemo(() => {
+    const map = {};
+    MOCK_PATIENTS.forEach(pt => {
+      providers.forEach(pr => {
+        if (pt.insuranceProvider && (pt.insuranceProvider.toLowerCase().includes(pr.name.toLowerCase()) || pt.insuranceProvider.toLowerCase().includes(pr.id))) {
+          map[pr.id] = (map[pr.id] || 0) + 1;
+        }
+      });
+    });
+    return map;
+  }, [providers]);
 
   const stats = useMemo(() => getOverviewStats(), []);
 
@@ -136,37 +172,25 @@ export default function ClinicianDashboard() {
         {/* Top Metrics Row - As per requirements.md */}
         <div className="med-top-metrics">
           <div className="med-metric-card">
-            <div className="mmc-icon" style={{ background: 'var(--blue-50)', color: 'var(--blue-500)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            </div>
-            <div className="mmc-info">
+            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
               <span className="mmc-val">{stats.totalPatients}</span>
               <span className="mmc-label">Active Patients</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-icon" style={{ background: 'var(--purple-50)', color: 'var(--purple-500)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <div className="mmc-info">
+            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
               <span className="mmc-val">{stats.totalSessions}</span>
               <span className="mmc-label">Total Sessions</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-icon" style={{ background: 'var(--amber-50)', color: 'var(--amber-500)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            </div>
-            <div className="mmc-info">
+            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
               <span className="mmc-val" style={{ color: stats.pendingInsurance > 0 ? 'var(--rose-500)' : 'inherit' }}>{stats.pendingInsurance}</span>
               <span className="mmc-label">Pending Insurance</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-icon" style={{ background: 'var(--emerald-50)', color: 'var(--emerald-500)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <div className="mmc-info">
+            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
               <span className="mmc-val" style={{ color: 'var(--emerald-600)' }}>$35,400</span>
               <span className="mmc-label">Recovered (YTD)</span>
             </div>
@@ -174,188 +198,289 @@ export default function ClinicianDashboard() {
         </div>
 
         {/* Dynamic Grid Content */}
-        <div className="med-content">
+        <div 
+          className="med-content" 
+          style={{ 
+            display: activeNav === 'dashboard' ? 'grid' : 'flex', 
+            flexDirection: 'column',
+            gap: '20px'
+          }}
+        >
           
-          {/* 1. Overall Performance (Stress Score) */}
-          <div className="mc-widget mc-overall">
-            <div className="mc-widget-title">
-              Overall Performance
-              <button className="mc-widget-link">
-                ↗ {((stats.totalSessions / 100) * 100).toFixed(0)}%
-              </button>
-            </div>
-            
-            <div className="mc-gauge-container">
-              <div className="mc-gauge-bg" />
-              <div 
-                className="mc-gauge-fill" 
-                style={{ transform: `rotate(${-90 + ((avgStress / 10) * 180)}deg)` }}
-              />
-              <div className="mc-gauge-inner">
-                <span className="mc-gauge-score">{avgStress.toFixed(1)}</span>
-                <span className="mc-gauge-label" style={{ background: avgStress >= 7 ? 'var(--rose-500)' : avgStress >= 5 ? 'var(--amber-500)' : 'var(--emerald-500)' }}>
-                  {avgStress >= 7 ? 'Critical' : avgStress >= 5 ? 'Elevated' : 'Good'}
-                </span>
-              </div>
-            </div>
-            
-            <p className="mc-overall-text">
-              <strong>{patient.name.split(' ')[0]}</strong> has an average stress score of {avgStress.toFixed(1)}/10 across {sessions.length} sessions.
-            </p>
-            
-            <button className="btn btn-primary" onClick={() => navigate(`/dashboard/${patient.id}`)}>
-              Check Full Report
-            </button>
-          </div>
-
-          {/* 2. Analytics */}
-          <div className="mc-widget mc-analytics">
-            <div className="mc-widget-title">
-              Analytics
-              <select className="btn btn-outline btn-sm" style={{ border: 'none', background: 'var(--gray-50)', fontSize: '0.8rem' }}>
-                <option>Weekly</option>
-                <option>Monthly</option>
-              </select>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '6px', marginBottom: 'auto' }}>
-              <button className="badge" style={{ background: 'var(--gray-900)', color: 'white' }}>Stress Score</button>
-              <button className="badge badge-blue">Indicators</button>
-              <button className="badge badge-purple">Risk Level</button>
-            </div>
-
-            <div className="mc-chart-wrapper">
-              <div className="mc-chart-line" />
-              {stressTrend.map((pt, i) => {
-                // scale to max 85% to leave room for the hover bubble logic
-                const heightPct = (pt.score / 10) * 85; 
-                const isMax = pt.score === Math.max(...stressTrend.map(p => p.score));
-                return (
-                  <div key={i} className="mc-chart-col">
-                    <div 
-                      className={`mc-chart-bar ${isMax ? 'active' : ''}`}
-                      style={{ height: `${Math.max(10, heightPct)}%` }}
-                    >
-                      <div className="mc-chart-bubble">{pt.score.toFixed(1)}</div>
-                    </div>
-                    <span className="mc-chart-label">{pt.day}</span>
+          {activeNav === 'dashboard' && (
+            <div style={{ display: 'contents', gap: '20px', flexWrap: 'wrap' }}>
+              {/* 1. Overall Performance (Stress Score) */}
+              <div className="mc-widget mc-overall">
+                <div className="mc-widget-title">
+                  Overall Performance
+                  <button className="mc-widget-link">
+                    ↗ {((stats.totalSessions / 100) * 100).toFixed(0)}%
+                  </button>
+                </div>
+                
+                <div className="mc-gauge-container" style={{ margin: '10px 0 20px' }}>
+                  <div className="mc-gauge-bg" />
+                  <div 
+                    className="mc-gauge-fill" 
+                    style={{ transform: `rotate(${-90 + ((avgStress / 10) * 180)}deg)` }}
+                  />
+                  <div className="mc-gauge-inner">
+                    <span className="mc-gauge-score">{avgStress.toFixed(1)}</span>
+                    <span className="mc-gauge-label" style={{ background: avgStress >= 7 ? 'var(--rose-500)' : avgStress >= 5 ? 'var(--amber-500)' : 'var(--emerald-500)' }}>
+                      {avgStress >= 7 ? 'Critical' : avgStress >= 5 ? 'Elevated' : 'Good'}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 3. Patient Profile */}
-          <div className="mc-widget mc-profile">
-            <div className="mc-profile-tabs">
-              <button className={`mc-ptab ${profileTab === 'profile' ? 'active' : ''}`} onClick={() => setProfileTab('profile')}>Profile</button>
-              <button className={`mc-ptab ${profileTab === 'history' ? 'active' : ''}`} onClick={() => setProfileTab('history')}>History</button>
-              <button className="mc-ptab">3+</button>
-            </div>
-
-            <div className="mc-profile-card-inner">
-              <div className={`mc-pc-avatar mc-pc-avatar-${patient.riskLevel}`}>
-                {patient.avatar}
-              </div>
-              <h3 className="mc-pc-name">{patient.name}</h3>
-              <p className="mc-pc-desc">{patient.age}yrs old • {patient.languageLabel}</p>
-              
-              <button className="mc-pc-action" onClick={() => navigate(`/dashboard/${patient.id}`)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-              </button>
-            </div>
-
-            <div className="mc-pc-info-list">
-              <div className="mc-pc-info-row">
-                <span>Diagnosis</span>
-                <span>{patient.diagnosis.split(';')[0]}</span>
-              </div>
-              <div className="mc-pc-info-divider" />
-              <div className="mc-pc-info-row">
-                <span>Communication</span>
-                <span>{patient.communicationLevel}</span>
-              </div>
-              <div className="mc-pc-info-divider" />
-              <div className="mc-pc-info-row">
-                <span>Last Appointment</span>
-                <span>{latestSession ? new Date(latestSession.timestamp).toLocaleDateString() : 'N/A'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Details / Queue Table (Restored columns!) */}
-          <div className="mc-widget mc-queue">
-            <div className="mc-queue-filters">
-              {['All', 'High Risk', 'New'].map(tab => (
-                <button 
-                  key={tab} 
-                  className={`mc-qf ${queueFilter === tab ? 'active' : ''}`} 
-                  onClick={() => setQueueFilter(tab)}
-                >
-                  {tab === 'All' ? 'Patient Queue' : tab}
+                </div>
+                
+                <p className="mc-overall-text">
+                  <strong>{patient.name.split(' ')[0]}</strong> has an average stress score of {avgStress.toFixed(1)}/10 across {sessions.length} sessions.
+                </p>
+                
+                <button className="btn btn-primary" onClick={() => navigate(`/dashboard/${patient.id}`)}>
+                  Check Full Report
                 </button>
-              ))}
-              <div style={{ flex: 1 }} />
-              <button className="btn btn-outline btn-sm" style={{ border: 'none', background: 'var(--gray-50)', fontSize: '0.8rem' }}>
-                Recent ˅
-              </button>
-            </div>
+              </div>
 
-            <div className="mc-table-container">
-              <table className="mc-table">
-                <thead>
-                  <tr>
-                    <th>Patient Name</th>
-                    <th>Primary Diagnosis</th>
-                    <th>Latest Date</th>
-                    <th>Stress Level</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPatients.map(p => {
-                    const isActive = p.id === patient.id;
-                    const pLatest = p.sessions[p.sessions.length - 1];
-                    const riskClass = p.riskLevel === 'high' ? 'high' : p.riskLevel === 'moderate' ? 'mod' : 'low';
-                    const score = pLatest ? pLatest.stressScore.toFixed(1) : '-';
-                    
+              {/* 2. Analytics */}
+              <div className="mc-widget mc-analytics">
+                <div className="mc-widget-title">
+                  Analytics
+                  <select className="btn btn-outline btn-sm" style={{ border: 'none', background: 'var(--gray-50)', fontSize: '0.8rem' }}>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                  </select>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '6px', marginBottom: 'auto' }}>
+                  <button className="badge" style={{ background: 'var(--gray-900)', color: 'white' }}>Stress Score</button>
+                  <button className="badge badge-blue">Indicators</button>
+                  <button className="badge badge-purple">Risk Level</button>
+                </div>
+
+                <div className="mc-chart-wrapper">
+                  <div className="mc-chart-line" />
+                  {stressTrend.map((pt, i) => {
+                    const heightPct = (pt.score / 10) * 85; 
+                    const isMax = pt.score === Math.max(...stressTrend.map(p => p.score));
                     return (
-                      <tr key={p.id} className={isActive ? 'selected' : ''} onClick={() => setSelectedPatient(p)}>
-                        <td>
-                          <div className="mc-td-name">{p.name}</div>
-                          <div className="mc-td-sub">{p.sessions.length} sessions</div>
-                        </td>
-                        <td>
-                          <div className="mc-td-name" style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {p.diagnosis.split(';')[0]}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="mc-td-name">{pLatest ? new Date(pLatest.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'N/A'}</div>
-                        </td>
-                        <td>
-                          <span className={`mc-td-badge ${riskClass}`}>
-                            Score: {score}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`mc-td-badge`} style={{ background: p.riskLevel === 'high' ? 'var(--rose-100)' : 'var(--gray-100)', color: p.riskLevel === 'high' ? 'var(--rose-700)' : 'var(--gray-700)' }}>
-                            {p.riskLevel.toUpperCase()}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/${p.id}`); }}>
-                            View ↗
-                          </button>
-                        </td>
-                      </tr>
+                      <div key={i} className="mc-chart-col">
+                        <div 
+                          className={`mc-chart-bar ${isMax ? 'active' : ''}`}
+                          style={{ height: `${Math.max(10, heightPct)}%` }}
+                        >
+                          <div className="mc-chart-bubble">{pt.score.toFixed(1)}</div>
+                        </div>
+                        <span className="mc-chart-label">{pt.day}</span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {(activeNav === 'dashboard' || activeNav === 'patients') && (
+            <div style={{ display: activeNav === 'dashboard' ? 'contents' : 'flex', gap: '20px', flexWrap: 'wrap', flexDirection: activeNav === 'patients' ? 'row-reverse' : 'row' }}>
+              {/* 3. Patient Profile */}
+              <div className="mc-widget mc-profile" style={{ flex: activeNav === 'patients' ? '1' : 'unset' }}>
+                <div className="mc-profile-tabs">
+                  <button className={`mc-ptab ${profileTab === 'profile' ? 'active' : ''}`} onClick={() => setProfileTab('profile')}>Profile</button>
+                  <button className={`mc-ptab ${profileTab === 'history' ? 'active' : ''}`} onClick={() => setProfileTab('history')}>History</button>
+                  <button className="mc-ptab">3+</button>
+                </div>
+
+                <div className="mc-profile-card-inner">
+                  <div className={`mc-pc-avatar mc-pc-avatar-${patient.riskLevel}`}>
+                    {patient.avatar}
+                  </div>
+                  <h3 className="mc-pc-name">{patient.name}</h3>
+                  <p className="mc-pc-desc">{patient.age}yrs old • {patient.languageLabel}</p>
+                  
+                  <button className="mc-pc-action" onClick={() => navigate(`/dashboard/${patient.id}`)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                  </button>
+                </div>
+
+                <div className="mc-pc-info-list" style={{ marginTop: activeNav === 'patients' ? '24px' : '16px' }}>
+                  <div className="mc-pc-info-row">
+                    <span>Diagnosis</span>
+                    <span>{patient.diagnosis.split(';')[0]}</span>
+                  </div>
+                  <div className="mc-pc-info-divider" />
+                  <div className="mc-pc-info-row">
+                    <span>Communication</span>
+                    <span>{patient.communicationLevel}</span>
+                  </div>
+                  <div className="mc-pc-info-divider" />
+                  <div className="mc-pc-info-row">
+                    <span>Last Appointment</span>
+                    <span>{latestSession ? new Date(latestSession.timestamp).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Details / Queue Table */}
+              <div className="mc-widget mc-queue" style={{ flex: activeNav === 'patients' ? '2.5' : 'unset' }}>
+                <div className="mc-queue-filters">
+                  {['All', 'High Risk', 'New'].map(tab => (
+                    <button 
+                      key={tab} 
+                      className={`mc-qf ${queueFilter === tab ? 'active' : ''}`} 
+                      onClick={() => setQueueFilter(tab)}
+                    >
+                      {tab === 'All' ? 'Patient Queue' : tab}
+                    </button>
+                  ))}
+                  <div style={{ flex: 1 }} />
+                  <button className="btn btn-outline btn-sm" style={{ border: 'none', background: 'var(--gray-50)', fontSize: '0.8rem' }}>
+                    Recent ˅
+                  </button>
+                </div>
+
+                <div className="mc-table-container">
+                  <table className="mc-table">
+                    <thead>
+                      <tr>
+                        <th>Patient Name</th>
+                        <th>Primary Diagnosis</th>
+                        <th>Latest Date</th>
+                        <th>Stress Level</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredPatients.map(p => {
+                        const isActive = p.id === patient.id;
+                        const pLatest = p.sessions[p.sessions.length - 1];
+                        const riskClass = p.riskLevel === 'high' ? 'high' : p.riskLevel === 'moderate' ? 'mod' : 'low';
+                        const score = pLatest ? pLatest.stressScore.toFixed(1) : '-';
+                        
+                        return (
+                          <tr key={p.id} className={isActive ? 'selected' : ''} onClick={() => setSelectedPatient(p)}>
+                            <td>
+                              <div className="mc-td-name">{p.name}</div>
+                              <div className="mc-td-sub">{p.sessions.length} sessions</div>
+                            </td>
+                            <td>
+                              <div className="mc-td-name" style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {p.diagnosis.split(';')[0]}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="mc-td-name">{pLatest ? new Date(pLatest.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'N/A'}</div>
+                            </td>
+                            <td>
+                              <span className={`mc-td-badge ${riskClass}`}>
+                                Score: {score}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`mc-td-badge`} style={{ background: p.riskLevel === 'high' ? 'var(--rose-100)' : 'var(--gray-100)', color: p.riskLevel === 'high' ? 'var(--rose-700)' : 'var(--gray-700)' }}>
+                                {p.riskLevel.toUpperCase()}
+                              </span>
+                            </td>
+                            <td>
+                              <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/${p.id}`); }}>
+                                View ↗
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Network Module */}
+          {activeNav === 'network' && (
+            <div className="mc-net-container">
+              <div className="mc-net-header">
+                <div>
+                  <h2 className="mc-net-title">Practice Network</h2>
+                  <p className="mc-net-subtitle">Manage your credentialed insurance providers and viewing policies.</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--emerald-600)' }}>
+                    {providers.filter(p => p.connected).length}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>In-network</div>
+                </div>
+              </div>
+
+              <div className="mc-net-filters">
+                <div className="mc-net-tabs">
+                  {['All', 'In-network', 'Out-of-network'].map(t => (
+                    <button 
+                      key={t}
+                      className={`mc-net-tab ${netFilter === t ? 'active' : ''}`}
+                      onClick={() => setNetFilter(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <div className="med-search-pill" style={{ margin: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input type="text" placeholder="Search providers..." value={netSearch} onChange={e => setNetSearch(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="mc-net-grid">
+                {filteredProviders.map(provider => (
+                  <div key={provider.id} className={`mc-net-card ${provider.connected ? 'connected' : ''}`}>
+                    <div className="mc-net-card-top">
+                      <div className="mc-net-icon" style={provider.connected ? { background: `linear-gradient(135deg, var(--emerald-500), var(--emerald-400))` } : {}}>
+                        {provider.letter}
+                      </div>
+                      <div className="mc-net-info">
+                        <h3>{provider.name}</h3>
+                        <span className={`mc-net-status ${provider.connected ? 'connected' : 'disconnected'}`}>
+                          {provider.connected ? 'In-network' : 'Out-of-network'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <p className="mc-net-desc">{provider.desc}</p>
+                    
+                    <div className="mc-net-cats">
+                      {provider.categories.slice(0, 3).map(cat => (
+                        <span key={cat} className="mc-net-cat">{cat}</span>
+                      ))}
+                    </div>
+
+                    <div className="mc-net-footer">
+                      <div className="mc-net-stats">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        {patientsPerInsurer[provider.id] || 0} Patients
+                      </div>
+                      
+                      <label className="mc-net-toggle">
+                        <input type="checkbox" checked={provider.connected} onChange={() => toggleConnection(provider.id)} />
+                        <span className="mc-toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Coming Soon Placeholders */}
+          {['settings', 'help'].includes(activeNav) && (
+            <div className="mc-widget" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)', background: 'linear-gradient(to bottom right, #fff, #f8fafc)' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--purple-50)', color: 'var(--purple-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)} Dashboard
+              </h3>
+              <p style={{ fontWeight: '500' }}>This module is currently under active development.</p>
+            </div>
+          )}
 
         </div>
       </div>
