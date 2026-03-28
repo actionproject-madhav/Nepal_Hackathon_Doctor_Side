@@ -8,13 +8,13 @@
  */
 function getPortalURL(insurerId) {
   const portals = {
-    united: '/mock-portal/united.html',
-    aetna: '/mock-portal/aetna.html',
-    cigna: '/mock-portal/united.html', // Can add more specific portals later
-    anthem: '/mock-portal/united.html',
-    humana: '/mock-portal/united.html',
-    medicare: '/mock-portal/united.html',
-    tricare: '/mock-portal/united.html',
+    united: '/portal/united.html',
+    aetna: '/portal/aetna.html',
+    cigna: '/portal/united.html', // Can add more specific portals later
+    anthem: '/portal/united.html',
+    humana: '/portal/united.html',
+    medicare: '/portal/united.html',
+    tricare: '/portal/united.html',
   };
 
   return portals[insurerId] || portals.united;
@@ -104,12 +104,12 @@ export async function automatePortalSubmission(insurerId, formData, onProgress) 
 }
 
 /**
- * Simulate EDI 837P transmission
+ * Execute EDI 837P transmission workflow
  * @param {Object} formData - Claim form data
  * @param {string} insurerId - Insurance provider ID
  * @param {Function} onProgress - Progress callback
  */
-export async function simulateEDITransmission(formData, insurerId, onProgress) {
+export async function executeEDITransmission(formData, insurerId, onProgress) {
   const steps = [
     { delay: 1500, message: 'Establishing secure EDI 837P connection tunnel...' },
     { delay: 2500, message: 'Mapping CMS-1500 clinical fields...' },

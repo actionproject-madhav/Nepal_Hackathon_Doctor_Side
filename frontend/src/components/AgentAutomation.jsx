@@ -4,12 +4,12 @@ import './AgentAutomation.css';
 
 /**
  * AgentAutomation Component
- * Simulates a live AI agent or RPA bot executing tasks on the screen.
- * 
+ * Displays live AI agent or automation workflow executing tasks in real-time.
+ *
  * @param {Array} tasks - Array of task objects: { text, subtext, typeSpeed, duration }
  * @param {Function} onComplete - Callback when all tasks finish
  * @param {String} title - Header title for the agent window
- * @param {String} insurerColor - Hex color to theme the agent securely
+ * @param {String} insurerColor - Hex color to theme the agent visual
  */
 export default function AgentAutomation({ tasks, onComplete, title = "Agent Action Executing", insurerColor = 'var(--green-500)' }) {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);

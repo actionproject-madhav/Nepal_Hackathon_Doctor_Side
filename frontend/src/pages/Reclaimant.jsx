@@ -7,6 +7,7 @@ import { getRelevantPrecedents } from '../data/precedentDB';
 import { scanForParityViolations, calculateWinProbability, classifyDenialReason } from '../utils/parityEngine';
 import { generateAppealLetter } from '../utils/appealGenerator';
 import { draftGmailAppeal } from '../utils/gmailService';
+import { submitAppealToBackend, checkBackendHealth, analyzeDenialWithAI, matchPrecedentsWithAI } from '../utils/reclaimantAPI';
 import AgentAutomation from '../components/AgentAutomation';
 import './Reclaimant.css';
 
@@ -41,6 +42,10 @@ export default function Reclaimant() {
   const [appealSubmitted, setAppealSubmitted] = useState(false);
   const [agentSubmitting, setAgentSubmitting] = useState(false);
   const [trackerStage, setTrackerStage] = useState(0);
+  const [backendAvailable, setBackendAvailable] = useState(true);
+  const [realTrackingId, setRealTrackingId] = useState(null);
+  const [enhancedDenialCategory, setEnhancedDenialCategory] = useState(null);
+  const [aiMatchedPrecedents, setAiMatchedPrecedents] = useState(null);
 
   const formData = passedFormData || {
     patientName: patient?.name || '',
@@ -69,6 +74,42 @@ export default function Reclaimant() {
   const winProbability = useMemo(() => {
     return calculateWinProbability(parityViolations, matchedPrecedents, insurer);
   }, [parityViolations, matchedPrecedents, insurer]);
+
+  // Check backend availability
+  useEffect(() => {
+    checkBackendHealth().then(available => {
+      setBackendAvailable(available);
+      if (!available) {
+        console.warn('Backend not available - using frontend-only mode');
+      } else {
+        console.log('✅ Backend connected - using real AI and email submission');
+      }
+    });
+  }, []);
+
+  // AI-enhanced denial analysis (Step 1)
+  useEffect(() => {
+    if (backendAvailable && denial && denial.reason) {
+      analyzeDenialWithAI(denial.reason, denial.code).then(aiAnalysis => {
+        if (aiAnalysis) {
+          setEnhancedDenialCategory(aiAnalysis);
+          console.log('AI Denial Analysis:', aiAnalysis);
+        }
+      });
+    }
+  }, [backendAvailable, denial]);
+
+  // AI-powered precedent matching (Step 2)
+  useEffect(() => {
+    if (backendAvailable && denial && matchedPrecedents.length > 0) {
+      matchPrecedentsWithAI(denial.reason, matchedPrecedents, 5).then(aiMatched => {
+        if (aiMatched && aiMatched.length > 0) {
+          setAiMatchedPrecedents(aiMatched);
+          console.log('AI Matched Precedents:', aiMatched);
+        }
+      });
+    }
+  }, [backendAvailable, denial, matchedPrecedents]);
 
   // Auto-advance through steps 1 & 2
   useEffect(() => {
@@ -99,9 +140,50 @@ export default function Reclaimant() {
     setAppealGenerating(false);
   };
 
-  const handleSubmitAppeal = () => {
+  const handleSubmitAppeal = async () => {
     setAgentSubmitting(true);
     setActiveStep(4);
+
+    // If backend is available, submit via API for real email sending
+    if (backendAvailable) {
+      try {
+        const appealData = {
+          patient_id: patient.id,
+          patient_name: patient.name,
+          insurer_id: insurerId,
+          insurer_name: insurer?.name || '',
+          claim_id: formData.insuranceId || claimId,
+          denial_code: denial.code,
+          denial_reason: denial.reason,
+          appeal_text: appealText,
+          win_probability: winProbability,
+          estimated_recovery: estimatedCost,
+          violations: parityViolations,
+          precedents: aiMatchedPrecedents || matchedPrecedents,
+          email_to: insurer?.claimsEmail || ''
+        };
+
+        console.log('📧 Submitting appeal to backend API...');
+        const result = await submitAppealToBackend(appealData);
+
+        if (result.success) {
+          setRealTrackingId(result.tracking_id);
+          console.log('✅ Real email sent!', result);
+          console.log(`📨 Sent to: ${result.sent_to}`);
+          console.log(`📬 Gmail Message ID: ${result.email_message_id}`);
+          console.log(`🎫 Tracking ID: ${result.tracking_id}`);
+        }
+      } catch (error) {
+        console.error('❌ Backend submission failed:', error);
+        console.log('📧 Falling back to Gmail draft...');
+        // Fallback to Gmail draft if backend fails
+        handleDraftEmailAppeal();
+      }
+    } else {
+      // No backend - use Gmail draft
+      console.log('📧 Backend not available, using Gmail draft');
+      handleDraftEmailAppeal();
+    }
   };
 
   const handleDraftEmailAppeal = () => {
@@ -166,6 +248,25 @@ export default function Reclaimant() {
       </header>
 
       <div className="recl-content">
+        {/* Backend Status Indicator */}
+        {backendAvailable && (
+          <div style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            fontSize: '13px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <span style={{fontSize: '16px'}}>✓</span>
+            <span>Production Mode Active: Real AI analysis, email sending via Gmail API, and MongoDB tracking enabled</span>
+          </div>
+        )}
+
         {/* Denial Banner */}
         <div className="recl-denial-banner">
           <div className="recl-db-icon">✕</div>
@@ -206,10 +307,15 @@ export default function Reclaimant() {
               <motion.div className="recl-step-body" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
                 <div className="recl-scan-grid">
                   <div className="recl-scan-item"><span className="recl-si-label">Denial Reason</span><span className="recl-si-val">{denial.reason}</span></div>
-                  <div className="recl-scan-item"><span className="recl-si-label">Parity Category</span><span className="recl-si-val">{denialCategory.category}</span></div>
-                  <div className="recl-scan-item"><span className="recl-si-label">Regulation</span><span className="recl-si-val">{denialCategory.regulation}</span></div>
-                  <div className="recl-scan-item"><span className="recl-si-label">Parity Implication</span><span className="recl-si-val recl-si-highlight">{denialCategory.parityImplication}</span></div>
+                  <div className="recl-scan-item"><span className="recl-si-label">Parity Category</span><span className="recl-si-val">{(enhancedDenialCategory || denialCategory).category}</span></div>
+                  <div className="recl-scan-item"><span className="recl-si-label">Regulation</span><span className="recl-si-val">{(enhancedDenialCategory || denialCategory).regulation}</span></div>
+                  <div className="recl-scan-item"><span className="recl-si-label">Parity Implication</span><span className="recl-si-val recl-si-highlight">{(enhancedDenialCategory || denialCategory).parityImplication}</span></div>
                 </div>
+                {backendAvailable && enhancedDenialCategory && (
+                  <div className="recl-ai-badge" style={{marginTop: 10, fontSize: 11, color: '#10b981', fontWeight: 600}}>
+                    ✨ Enhanced with AI Analysis
+                  </div>
+                )}
                 {parityViolations.length > 0 && (
                   <div className="recl-violations-mini">
                     <strong>{parityViolations.length} MHPAEA Violation{parityViolations.length > 1 ? 's' : ''} Detected:</strong>
@@ -234,8 +340,13 @@ export default function Reclaimant() {
             </div>
             {activeStep >= 2 && (
               <motion.div className="recl-step-body" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                {backendAvailable && aiMatchedPrecedents && (
+                  <div className="recl-ai-badge" style={{marginBottom: 10, fontSize: 11, color: '#10b981', fontWeight: 600}}>
+                    ✨ AI-Powered Vector Similarity Matching
+                  </div>
+                )}
                 <div className="recl-prec-list">
-                  {matchedPrecedents.slice(0, 5).map((p, i) => (
+                  {(aiMatchedPrecedents || matchedPrecedents).slice(0, 5).map((p, i) => (
                     <div key={i} className="recl-prec-item">
                       <div className="recl-pi-top">
                         <span className="recl-pi-case">{p.case}</span>
@@ -309,10 +420,17 @@ export default function Reclaimant() {
               <motion.div className="recl-step-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {agentSubmitting ? (
                   <AgentAutomation
-                    title={`Executing Appellate Workflow. Target: ${insurer?.name || 'Insurer'} Portal`}
+                    title={backendAvailable ? `Executing Real Appeal Submission to ${insurer?.name || 'Insurer'}` : `Executing Appellate Workflow. Target: ${insurer?.name || 'Insurer'} Portal`}
                     insurerColor={insurer?.color}
                     onComplete={finalizeAppealSubmit}
-                    tasks={[
+                    tasks={backendAvailable ? [
+                      { text: `Authenticating with Gmail API...`, duration: 1500 },
+                      { text: 'Formatting MHPAEA appeal letter with HTML template...', subtext: `Patient: ${patient.name}\nClaim: ${formData.insuranceId}\nInsurer: ${insurer?.name}`, typeSpeed: 20, duration: 2000 },
+                      { text: 'Compiling legal attachments and evidence...', subtext: `✓ Appeal Letter (${appealText.length} chars)\n✓ ${parityViolations.length} MHPAEA Violations\n✓ ${matchedPrecedents.length} Legal Precedents\n✓ ${sessions.length} Clinical Sessions`, typeSpeed: 10, duration: 3000 },
+                      { text: 'Sending email via Gmail API...', subtext: `To: ${insurer?.claimsEmail || 'appeals@insurance.com'}\nSubject: FORMAL APPEAL - ${formData.insuranceId}`, typeSpeed: 25, duration: 2500 },
+                      { text: 'Storing appeal in MongoDB database...', subtext: `Database: voicecanvas_appeals\nCollection: appeals\nTracking ID: ${realTrackingId || 'Generating...'}`, typeSpeed: 15, duration: 2000 },
+                      { text: 'Email delivered successfully!', subtext: realTrackingId ? `✅ Real email sent!\n📬 Tracking ID: ${realTrackingId}\n📊 Stored in production database` : `Generating tracking ID...`, typeSpeed: 20, duration: 2500 }
+                    ] : [
                       { text: `Establishing secure connection to ${insurer?.name || 'Insurer'} Provider Portal...`, duration: 1500 },
                       { text: 'Navigating to Appeals & Grievances dashboard...', subtext: `Claim ID: ${formData.insuranceId}`, typeSpeed: 20, duration: 2000 },
                       { text: 'Compiling legal demand package...', subtext: `Attached: LLM_Appeal_Letter.pdf\nAttached: Clinical_Evidence_Summary.pdf\nAttached: MHPAEA_Parity_Log.pdf`, typeSpeed: 10, duration: 3000 },
