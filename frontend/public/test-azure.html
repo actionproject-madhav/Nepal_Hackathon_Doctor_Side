@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Storage Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #333; margin-top: 0; }
+    h2 { color: #666; font-size: 18px; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
+    .status { padding: 12px; border-radius: 4px; margin: 12px 0; }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    input[type="file"] { margin: 12px 0; }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      margin: 8px 0;
+    }
+    label { display: block; margin-top: 12px; font-weight: 500; color: #555; }
+    pre {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .config-item { margin: 8px 0; }
+    .config-label { font-weight: 500; color: #666; }
+    .config-value { font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Azure Blob Storage - Session Replay Test</h1>
+
+  <div class="card">
+    <h2>1. Environment Configuration</h2>
+    <div id="config-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Test Connection</h2>
+    <button onclick="testConnection()">Test Azure Connection</button>
+    <div id="connection-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>3. Upload Test Video</h2>
+    <label>Patient ID:</label>
+    <input type="text" id="patientId" value="pt-001" placeholder="e.g., pt-001">
+
+    <label>Session ID:</label>
+    <input type="text" id="sessionId" value="test-session-1" placeholder="e.g., session-123">
+
+    <label>Prompt Title:</label>
+    <input type="text" id="promptTitle" value="Test Drawing Session" placeholder="e.g., Draw your safe place">
+
+    <label>Stress Score (0-10):</label>
+    <input type="text" id="stressScore" value="5.5" placeholder="e.g., 7.5">
+
+    <label>Select Video File:</label>
+    <input type="file" id="videoFile" accept="video/*">
+
+    <button onclick="uploadTestVideo()" id="uploadBtn">Upload to Azure</button>
+    <div id="upload-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>4. Fetch Latest Session</h2>
+    <label>Patient ID:</label>
+    <input type="text" id="fetchPatientId" value="pt-001">
+    <button onclick="fetchLatestSession()">Fetch Latest Session</button>
+    <div id="fetch-status"></div>
+  </div>
+
+  <script type="module">
+    // Import Azure config from environment
+    const AZURE_CONFIG = {
+      account: import.meta.env?.VITE_AZURE_STORAGE_ACCOUNT || 'nepusahack26',
+      container: import.meta.env?.VITE_AZURE_STORAGE_CONTAINER || 'session-replays',
+      sas: import.meta.env?.VITE_AZURE_STORAGE_SAS || 'sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2026-03-31T00:13:39Z&st=2026-03-28T15:58:39Z&spr=https,http&sig=b%2B%2FEQMnY95qkPsUc4Rs3YmWCMI%2F4GlsobA8ZukzzvIQ%3D'
+    };
+
+    // Make functions available globally
+    window.AZURE_CONFIG = AZURE_CONFIG;
+
+    // Display configuration
+    function displayConfig() {
+      const { account, container, sas } = AZURE_CONFIG;
+      const configEl = document.getElementById('config-status');
+
+      if (!account || !container || !sas) {
+        configEl.innerHTML = '<div class="status error">❌ Azure Storage not configured. Check your .env file.</div>';
+        return false;
+      }
+
+      configEl.innerHTML = `
+        <div class="status success">✅ Azure Storage Configuration Loaded</div>
+        <div class="config-item"><span class="config-label">Account:</span> <span class="config-value">${account}</span></div>
+        <div class="config-item"><span class="config-label">Container:</span> <span class="config-value">${container}</span></div>
+        <div class="config-item"><span class="config-label">SAS Token:</span> <span class="config-value">${sas.substring(0, 50)}...</span></div>
+      `;
+      return true;
+    }
+
+    displayConfig();
+
+    // Test connection
+    window.testConnection = async function() {
+      const statusEl = document.getElementById('connection-status');
+      statusEl.innerHTML = '<div class="status info">Testing connection...</div>';
+
+      try {
+        const { account, container, sas } = AZURE_CONFIG;
+        const testUrl = `https://${account}.blob.core.windows.net/${container}?${sas}&restype=container&comp=list&maxresults=1`;
+
+        const response = await fetch(testUrl);
+
+        if (response.ok) {
+          statusEl.innerHTML = '<div class="status success">✅ Successfully connected to Azure Blob Storage!</div>';
+        } else {
+          statusEl.innerHTML = `<div class="status error">❌ Connection failed: ${response.status} ${response.statusText}</div>`;
+        }
+      } catch (error) {
+        statusEl.innerHTML = `<div class="status error">❌ Connection error: ${error.message}</div>`;
+      }
+    };
+
+    // Upload test video
+    window.uploadTestVideo = async function() {
+      const statusEl = document.getElementById('upload-status');
+      const uploadBtn = document.getElementById('uploadBtn');
+
+      const patientId = document.getElementById('patientId').value;
+      const sessionId = document.getElementById('sessionId').value;
+      const promptTitle = document.getElementById('promptTitle').value;
+      const stressScore = parseFloat(document.getElementById('stressScore').value);
+      const videoFile = document.getElementById('videoFile').files[0];
+
+      if (!videoFile) {
+        statusEl.innerHTML = '<div class="status error">❌ Please select a video file</div>';
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      statusEl.innerHTML = '<div class="status info">Uploading video...</div>';
+
+      try {
+        const { account, container, sas } = AZURE_CONFIG;
+        const timestamp = new Date().getTime();
+        const videoFileName = `session-${sessionId}-${timestamp}.mp4`;
+        const videoPath = `${patientId}/${videoFileName}`;
+
+        // Upload video
+        const videoUrl = `https://${account}.blob.core.windows.net/${container}/${videoPath}?${sas}`;
+
+        const uploadResponse = await fetch(videoUrl, {
+          method: 'PUT',
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'Content-Type': videoFile.type || 'video/mp4',
+          },
+          body: videoFile,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        }
+
+        // Create metadata
+        const metadata = {
+          videoPath,
+          sessionId,
+          sessionDate: new Date().toISOString(),
+          promptTitle,
+          stressScore,
+          uploadedAt: new Date().toISOString(),
+        };
+
+        // Upload metadata
+        const metaPath = `${patientId}/latest-replay.json`;
+        const metaUrl = `https://${account}.blob.core.windows.net/${container}/${metaPath}?${sas}`;
+
+        const metaResponse = await fetch(metaUrl, {
+          method: 'PUT',
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(metadata, null, 2),
+        });
+
+        if (!metaResponse.ok) {
+          throw new Error(`Metadata upload failed: ${metaResponse.status}`);
+        }
+
+        const playbackUrl = `https://${account}.blob.core.windows.net/${container}/${videoPath}?${sas}`;
+
+        statusEl.innerHTML = `
+          <div class="status success">✅ Video uploaded successfully!</div>
+          <div style="margin-top: 12px;">
+            <strong>Video URL:</strong><br>
+            <a href="${playbackUrl}" target="_blank">${playbackUrl.substring(0, 80)}...</a>
+          </div>
+          <div style="margin-top: 12px;">
+            <strong>Metadata:</strong>
+            <pre>${JSON.stringify(metadata, null, 2)}</pre>
+          </div>
+        `;
+      } catch (error) {
+        statusEl.innerHTML = `<div class="status error">❌ Upload failed: ${error.message}</div>`;
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    };
+
+    // Fetch latest session
+    window.fetchLatestSession = async function() {
+      const statusEl = document.getElementById('fetch-status');
+      const patientId = document.getElementById('fetchPatientId').value;
+
+      statusEl.innerHTML = '<div class="status info">Fetching session metadata...</div>';
+
+      try {
+        const { account, container, sas } = AZURE_CONFIG;
+        const metaPath = `${patientId}/latest-replay.json`;
+        const metaUrl = `https://${account}.blob.core.windows.net/${container}/${metaPath}?${sas}`;
+
+        const response = await fetch(metaUrl);
+
+        if (!response.ok) {
+          throw new Error(`Not found: ${response.status}`);
+        }
+
+        const metadata = await response.json();
+        const videoUrl = `https://${account}.blob.core.windows.net/${container}/${metadata.videoPath}?${sas}`;
+
+        statusEl.innerHTML = `
+          <div class="status success">✅ Session found!</div>
+          <div style="margin-top: 12px;">
+            <strong>Session Data:</strong>
+            <pre>${JSON.stringify(metadata, null, 2)}</pre>
+          </div>
+          <div style="margin-top: 12px;">
+            <strong>Video Player:</strong><br>
+            <video controls width="100%" style="margin-top: 8px; border-radius: 4px;">
+              <source src="${videoUrl}" type="video/mp4">
+            </video>
+          </div>
+        `;
+      } catch (error) {
+        statusEl.innerHTML = `<div class="status error">❌ No session found for patient ${patientId}: ${error.message}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>
