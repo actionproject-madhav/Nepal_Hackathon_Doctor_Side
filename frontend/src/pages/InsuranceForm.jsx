@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
+import { MOCK_PATIENTS, getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
 import { MOCK_REPLAY, getEmotionColor } from '../data/mockReplay';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
+import AgentAutomation from '../components/AgentAutomation';
 import './InsuranceForm.css';
 
 const PRECEDENT_DB = [
@@ -103,14 +104,56 @@ export default function InsuranceForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setStep('submitted');
+    setStep('agent_submitting');
   };
 
-  useEffect(() => {
-    if (!patient) navigate('/dashboard', { replace: true });
-  }, [patient, navigate]);
+  if (!patient) {
+    return (
+      <div className="ins-page">
+        <header className="ins-topnav">
+          <button className="ins-back" onClick={() => navigate('/dashboard')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <nav className="ins-nav-pills">
+            <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
+            <button className="ins-nav-pill ins-nav-active">Claims</button>
+            <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Network</button>
+          </nav>
+          <div className="ins-topnav-right">
+            <div className="ins-user-avatar">Dr</div>
+          </div>
+        </header>
 
-  if (!patient) return null;
+        <div className="ins-content">
+          <div className="ins-no-patient">
+            <div className="ins-np-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h2>Select a Patient to File a Claim</h2>
+            <p>Start an insurance claim or appeal by selecting a patient from your active roster.</p>
+
+            <div className="ins-patient-list">
+              {MOCK_PATIENTS.map(p => (
+                <div key={p.id} className="ins-pl-item" onClick={() => navigate('/insurance', { state: { patientId: p.id }, replace: true })}>
+                  <div className={`ins-pl-avatar ins-pl-av-${p.risk || 'low'}`}>{p.name.charAt(0)}</div>
+                  <div className="ins-pl-info">
+                    <span className="ins-pl-name">{p.name}</span>
+                    <span className="ins-pl-sub">{p.diagnosis || 'Active Patient'}</span>
+                  </div>
+                  <div className="ins-pl-insurer">
+                    <span className="ins-pl-insurer-name">{p.insuranceProvider}</span>
+                    <span className={`ins-pl-network ${isInNetwork(p.insuranceProvider) ? 'ins-pl-in' : 'ins-pl-out'}`}>
+                      {isInNetwork(p.insuranceProvider) ? 'In-Network' : 'Out-of-Network'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ins-page">
@@ -302,10 +345,10 @@ export default function InsuranceForm() {
 
                 {/* Right: Parity + Precedents + Evidence */}
                 <div className="ins-parity-col">
-                  <div className="ins-parity-card">
+                  <div className="ins-parity-card" style={{ borderColor: matchedInsurer?.color ? `${matchedInsurer.color}33` : 'var(--gray-200)' }}>
                     <div className="ins-parity-header">
-                      <h3>Parity Guard</h3>
-                      <span className="ins-parity-badge">AI PROTECTED</span>
+                      <h3>Clinical Rules Engine (MHPAEA)</h3>
+                      <span className="ins-parity-badge" style={{ background: matchedInsurer?.color || 'var(--green-500)' }}>ACTIVE</span>
                     </div>
 
                     {parityViolations.length > 0 ? (
@@ -485,6 +528,24 @@ export default function InsuranceForm() {
             </motion.div>
           )}
 
+          {step === 'agent_submitting' && (
+            <motion.div key="agent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <AgentAutomation 
+                title={`Transmitting to ${matchedInsurer?.name || patient.insuranceProvider}`}
+                insurerColor={matchedInsurer?.color}
+                onComplete={() => setStep('submitted')}
+                tasks={[
+                  { text: 'Establishing secure EDI 837P connection tunnel...', duration: 1500 },
+                  { text: 'Mapping CMS-1500 clinical fields...', subtext: `ICD-10: ${formData.diagnosisCategory}\nCPT: ${formData.requestedService === 'both' ? '90837, 96130' : '90837'}\nModifier: U5`, typeSpeed: 20, duration: 2500 },
+                  { text: `Attaching ${sessions.length} encrypted session transcripts...`, duration: 1200 },
+                  { text: `Running final MHPAEA parity compliance check...`, subtext: parityViolations.length > 0 ? `Flagged ${parityViolations.length} potential non-quantitative treatment limitations.` : 'Clear. No violations detected.', typeSpeed: 15, duration: 2000 },
+                  { text: `Transmitting X12 payload to clearinghouse...`, duration: 1800 },
+                  { text: `Awaiting 999 Implementation Acknowledgement...`, subtext: 'Response: ACK_PENDING_REVIEW', typeSpeed: 30, duration: 2000 },
+                ]}
+              />
+            </motion.div>
+          )}
+
           {step === 'submitted' && (
             <motion.div key="submitted" className="ins-submitted" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
               <div className="ins-submitted-card">
@@ -534,9 +595,9 @@ export default function InsuranceForm() {
                 </div>
 
                 <div className="ins-denial-sim">
-                  <h4>Demo: Simulate a Denial</h4>
-                  <p>In production, denials arrive in 5-30 days. For this demo, simulate a denial to see the Reclaimant auto-appeal engine.</p>
-                  <button className="ins-btn-deny" onClick={() => setStep('denied')}>Simulate Insurer Denial</button>
+                  <h4>Review Adjudication Response</h4>
+                  <p>Check the payer EOB (Explanation of Benefits). If this claim results in a denial, proceed to the appellate workflow to construct an appeal based on federal compliance logic.</p>
+                  <button className="ins-btn-deny" style={{ background: matchedInsurer?.color || 'var(--rose-500)' }} onClick={() => navigate('/reclaimant', { state: { patientId: patient.id, insurerId: matchedInsurer?.id || 'united', formData, claimId: formData.insuranceId, estimatedCost } })}>View Claim EOB (MN-4021)</button>
                 </div>
 
                 <button className="ins-btn-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>
@@ -545,125 +606,7 @@ export default function InsuranceForm() {
               </div>
             </motion.div>
           )}
-
-          {step === 'denied' && (
-            <motion.div key="denied" className="ins-denied-view" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="ins-denial-banner">
-                <h2>Claim Denied by {matchedInsurer?.name || patient.insuranceProvider}</h2>
-                <p>"Insufficient medical necessity documentation for requested mental health services."</p>
-                <div className="ins-denial-meta">
-                  <span className="ins-denial-code">Denial Code: MN-4021</span>
-                  {matchedInsurer && (
-                    <span className="ins-denial-window">Appeal window: {matchedInsurer.policies.appealWindow}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="ins-reclaimant">
-                <div className="ins-recl-header">
-                  <h3>Reclaimant Auto-Appeal</h3>
-                  <span className="ins-recl-badge">AI-Powered</span>
-                </div>
-
-                <div className="ins-recl-steps">
-                  <div className="ins-recl-step ins-rs-done">
-                    <span className="ins-rs-num">1</span>
-                    <div>
-                      <strong>Denial Analysis</strong>
-                      <p>Parsed denial reason via NLP. Denial code MN-4021 maps to "medical necessity" category. {patient.isNonverbal ? 'Patient is nonverbal — MHPAEA protected class applies.' : 'Checking parity compliance.'}</p>
-                    </div>
-                  </div>
-
-                  <div className="ins-recl-step ins-rs-done">
-                    <span className="ins-rs-num">2</span>
-                    <div>
-                      <strong>Parity Violation Check</strong>
-                      <p>{parityViolations.length} MHPAEA violation{parityViolations.length !== 1 ? 's' : ''} detected against {matchedInsurer?.name || patient.insuranceProvider}.
-                      {matchedInsurer && ` This insurer has a ${matchedInsurer.policies.denialRate} MH denial rate and is ${matchedInsurer.policies.parityCompliant === 'Yes' ? '' : 'not fully '}parity compliant.`}</p>
-                    </div>
-                  </div>
-
-                  <div className="ins-recl-step ins-rs-done">
-                    <span className="ins-rs-num">3</span>
-                    <div>
-                      <strong>Precedent Match</strong>
-                      <p>{matchedPrecedents.length} relevant cases from 15-year litigation database.</p>
-                      <div className="ins-recl-cases">
-                        {matchedPrecedents.map((p, i) => (
-                          <div key={i} className="ins-recl-case">
-                            <span>{p.case}</span>
-                            <span className={`ins-rc-badge ${p.outcome === 'Patient won' ? 'ins-rc-won' : 'ins-rc-settled'}`}>{p.outcome}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`ins-recl-step ${appealGenerated ? 'ins-rs-done' : 'ins-rs-pending'}`}>
-                    <span className="ins-rs-num">4</span>
-                    <div>
-                      <strong>Generate Appeal Letter</strong>
-                      {!appealGenerated ? (
-                        <button className="ins-btn-generate" onClick={() => setAppealGenerated(true)}>Generate Appeal</button>
-                      ) : (
-                        <motion.div className="ins-appeal-letter" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                          <p><strong>To:</strong> {matchedInsurer?.name || patient.insuranceProvider} — Appeals & Grievances Dept.</p>
-                          <p><strong>Re:</strong> Appeal of Denial MN-4021 — {formData.patientName}, ID {formData.insuranceId}</p>
-                          <p><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                          <hr />
-                          <p>Dear Appeals Officer,</p>
-                          <p>We are writing to formally appeal the denial of pre-authorization for {formData.patientName} under the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
-                          <p><strong>Clinical Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions via VoiceCanvas. Average stress score: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} of {sessions.length} sessions. {sessions.filter(s => s.result.crisis_flag).length > 0 ? `Crisis flags triggered in ${sessions.filter(s => s.result.crisis_flag).length} session(s). ` : ''}</p>
-                          {patient.id === MOCK_REPLAY.patientId && (
-                            <p><strong>Video & Biometric Evidence:</strong> Session replay with {MOCK_REPLAY.emotionTimeline.length} AI-analyzed emotional states including detected stress indicators (brow furrow, jaw clench, heavy line pressure). Brain sensory analysis confirmed peak frustration at 0:{String(MOCK_REPLAY.overallAnalysis.peakStress.time).padStart(2, '0')} with valence {MOCK_REPLAY.overallAnalysis.peakStress.valence}. Patient showed {MOCK_REPLAY.overallAnalysis.verbalAttempts} verbal attempt(s) — subvocalization without audio production, consistent with documented nonverbal condition. Full video evidence attached.</p>
-                          )}
-                          <p><strong>Parity Violations:</strong> {parityViolations.map(v => `${v.type} (${v.code})`).join('; ') || 'None identified'}.</p>
-                          <p><strong>Legal Precedent:</strong> {matchedPrecedents.map(p => `${p.case} — ${p.outcome}`).join('; ')}. Average win rate: {avgWinRate}%.</p>
-                          <p><strong>Demand:</strong> We request immediate approval of the requested services within 30 days per {matchedInsurer?.policies.appealWindow || '180 days'} appeal window requirements.</p>
-                          <div className="ins-appeal-footer">
-                            Estimated appeal success: <strong>{avgWinRate}%</strong>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-
-                  {appealGenerated && (
-                    <div className={`ins-recl-step ${appealSubmitted ? 'ins-rs-done' : 'ins-rs-pending'}`}>
-                      <span className="ins-rs-num">5</span>
-                      <div>
-                        <strong>Submit Appeal</strong>
-                        {!appealSubmitted ? (
-                          <button className="ins-btn-generate" onClick={() => setAppealSubmitted(true)}>Submit to {matchedInsurer?.name || patient.insuranceProvider}</button>
-                        ) : (
-                          <motion.div className="ins-appeal-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <p>Appeal submitted to {matchedInsurer?.name || patient.insuranceProvider}. Expected response within 30-45 days.</p>
-                            <div className="ins-appeal-amount">
-                              Estimated recovery: <strong>${Math.round(estimatedCost * avgWinRate / 100).toLocaleString()}</strong>
-                            </div>
-                            <div className="ins-appeal-tracker">
-                              <div className="ins-at-step ins-at-active">Submitted</div>
-                              <div className="ins-at-line" />
-                              <div className="ins-at-step">Under Review</div>
-                              <div className="ins-at-line" />
-                              <div className="ins-at-step">Decision</div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <button className="ins-btn-back" onClick={() => navigate(`/dashboard/${patient.id}`)}>
-                Back to {patient.name}
-              </button>
-            </motion.div>
-          )}
         </AnimatePresence>
-
-        <p className="ins-disclaimer">DEMO ONLY — No real insurance submission. Not HIPAA compliant.</p>
       </div>
     </div>
   );

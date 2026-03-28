@@ -4,6 +4,7 @@ import ClinicLanding from './pages/ClinicLanding';
 import ClinicianDashboard from './pages/ClinicianDashboard';
 import PatientDetail from './pages/PatientDetail';
 import InsuranceForm from './pages/InsuranceForm';
+import Reclaimant from './pages/Reclaimant';
 import Integrations from './pages/Integrations';
 import SessionReplay from './pages/SessionReplay';
 import './index.css';
@@ -25,6 +26,7 @@ function AnimatedRoutes() {
           <Route path="/dashboard" element={<ClinicianDashboard />} />
           <Route path="/dashboard/:patientId" element={<PatientDetail />} />
           <Route path="/insurance" element={<InsuranceForm />} />
+          <Route path="/reclaimant" element={<Reclaimant />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/replay/:patientId" element={<SessionReplay />} />
         </Routes>
