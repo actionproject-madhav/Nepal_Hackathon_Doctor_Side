@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPatientById, getPatientAnalytics, MOCK_PATIENTS } from '../data/mockPatients';
+import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
 import './InsuranceForm.css';
@@ -105,66 +105,11 @@ export default function InsuranceForm() {
     setStep('submitted');
   };
 
-  // No patient selected — show selection screen
-  if (!patient) {
-    return (
-      <div className="ins-page">
-        <header className="ins-topnav">
-          <button className="ins-back" onClick={() => navigate('/dashboard')}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <nav className="ins-nav-pills">
-            <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
-            <button className="ins-nav-pill ins-nav-active">Claims</button>
-            <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Network</button>
-          </nav>
-          <div className="ins-topnav-right">
-            <div className="ins-user-avatar">Dr</div>
-          </div>
-        </header>
+  useEffect(() => {
+    if (!patient) navigate('/dashboard', { replace: true });
+  }, [patient, navigate]);
 
-        <div className="ins-content">
-          <div className="ins-no-patient">
-            <div className="ins-np-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-              </svg>
-            </div>
-            <h2>Select a Patient to File a Claim</h2>
-            <p>Insurance claims must be filed for a specific patient. Choose a patient from your dashboard or from the list below.</p>
-
-            <div className="ins-patient-list">
-              {MOCK_PATIENTS.map(pt => {
-                const ptInNetwork = isInNetwork(pt.insuranceProvider);
-                return (
-                  <button
-                    key={pt.id}
-                    className="ins-pl-item"
-                    onClick={() => navigate('/insurance', { state: { patientId: pt.id } })}
-                  >
-                    <div className={`ins-pl-avatar ins-pl-av-${pt.riskLevel}`}>{pt.avatar}</div>
-                    <div className="ins-pl-info">
-                      <span className="ins-pl-name">{pt.name}</span>
-                      <span className="ins-pl-sub">{pt.diagnosis.split(';')[0].split(' ').slice(1).join(' ')}</span>
-                    </div>
-                    <div className="ins-pl-insurer">
-                      <span className="ins-pl-insurer-name">{pt.insuranceProvider}</span>
-                      <span className={`ins-pl-network ${ptInNetwork ? 'ins-pl-in' : 'ins-pl-out'}`}>
-                        {ptInNetwork ? 'In-network' : 'Out-of-network'}
-                      </span>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!patient) return null;
 
   return (
     <div className="ins-page">

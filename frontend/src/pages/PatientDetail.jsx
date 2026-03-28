@@ -177,16 +177,27 @@ export default function PatientDetail() {
               <div className="pd-bars">
                 {stressTrend.map((pt, i) => {
                   const pct = (pt.score / maxScore) * 100;
+                  const isHigh = pt.score >= 7;
+                  const isMid = pt.score >= 5;
+                  
+                  // Use sleek gradients instead of flat colors
+                  const bgStyle = isHigh 
+                    ? 'linear-gradient(180deg, var(--rose-400) 0%, rgba(244,63,94,0.4) 100%)' 
+                    : isMid 
+                    ? 'linear-gradient(180deg, var(--amber-400) 0%, rgba(245,158,11,0.4) 100%)' 
+                    : 'linear-gradient(180deg, var(--purple-400) 0%, rgba(129,140,248,0.4) 100%)';
+
                   return (
-                    <div key={i} className="pd-bar-col" title={`${pt.date}: ${pt.score.toFixed(1)}/10`}>
+                    <div key={i} className="pd-bar-col">
+                      <div className="pd-bar-tooltip">{pt.date}: {pt.score.toFixed(1)}/10</div>
                       <motion.div
                         className="pd-bar"
-                        style={{ background: pt.score >= 7 ? 'var(--error)' : pt.score >= 5 ? 'var(--warning)' : 'var(--success)' }}
+                        style={{ background: bgStyle }}
                         initial={{ height: 0 }}
                         animate={{ height: `${pct}%` }}
-                        transition={{ delay: 0.2 + i * 0.06, duration: 0.5 }}
+                        transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: "easeOut" }}
                       />
-                      <span className="pd-bar-label">{pt.date}</span>
+                      <span className="pd-bar-label">{pt.date.split(' ')[0]} {pt.date.split(' ')[1]}</span>
                     </div>
                   );
                 })}
