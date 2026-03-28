@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
+import { MOCK_PATIENTS, getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
 import './InsuranceForm.css';
@@ -105,11 +105,53 @@ export default function InsuranceForm() {
     setStep('submitted');
   };
 
-  useEffect(() => {
-    if (!patient) navigate('/dashboard', { replace: true });
-  }, [patient, navigate]);
+  if (!patient) {
+    return (
+      <div className="ins-page">
+        <header className="ins-topnav">
+          <button className="ins-back" onClick={() => navigate('/dashboard')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <nav className="ins-nav-pills">
+            <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
+            <button className="ins-nav-pill ins-nav-active">Claims</button>
+            <button className="ins-nav-pill" onClick={() => navigate('/integrations')}>Network</button>
+          </nav>
+          <div className="ins-topnav-right">
+            <div className="ins-user-avatar">Dr</div>
+          </div>
+        </header>
 
-  if (!patient) return null;
+        <div className="ins-content">
+          <div className="ins-no-patient">
+            <div className="ins-np-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h2>Select a Patient to File a Claim</h2>
+            <p>Start an insurance claim or appeal by selecting a patient from your active roster.</p>
+
+            <div className="ins-patient-list">
+              {MOCK_PATIENTS.map(p => (
+                <div key={p.id} className="ins-pl-item" onClick={() => navigate('/insurance', { state: { patientId: p.id }, replace: true })}>
+                  <div className={`ins-pl-avatar ins-pl-av-${p.risk || 'low'}`}>{p.name.charAt(0)}</div>
+                  <div className="ins-pl-info">
+                    <span className="ins-pl-name">{p.name}</span>
+                    <span className="ins-pl-sub">{p.diagnosis || 'Active Patient'}</span>
+                  </div>
+                  <div className="ins-pl-insurer">
+                    <span className="ins-pl-insurer-name">{p.insuranceProvider}</span>
+                    <span className={`ins-pl-network ${isInNetwork(p.insuranceProvider) ? 'ins-pl-in' : 'ins-pl-out'}`}>
+                      {isInNetwork(p.insuranceProvider) ? 'In-Network' : 'Out-of-Network'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ins-page">
