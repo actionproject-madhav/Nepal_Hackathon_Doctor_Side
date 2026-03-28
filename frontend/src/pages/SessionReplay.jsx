@@ -3,8 +3,30 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getPatientById } from '../data/mockPatients';
 import { getReplayForPatient, getEmotionColor, getValenceLabel } from '../data/mockReplay';
-import { getAzureReplayConfig, fetchLatestReplayMeta, buildBlobUrl } from '../utils/azureReplay';
+import {
+  getAzureReplayConfig,
+  fetchLatestReplayMetaDetailed,
+  fetchSessionsManifest,
+  deleteAzureSession,
+  buildBlobUrl,
+} from '../utils/azureReplay';
 import './SessionReplay.css';
+
+function buildAzureReplayFromMeta(meta, cfg) {
+  if (!meta || !cfg) return null;
+  return {
+    videoUrl: meta.videoPath
+      ? buildBlobUrl(cfg.account, cfg.container, meta.videoPath, cfg.sas)
+      : undefined,
+    drawingImageUrl: meta.drawingPath
+      ? buildBlobUrl(cfg.account, cfg.container, meta.drawingPath, cfg.sas)
+      : undefined,
+    sessionId: meta.sessionId,
+    sessionDate: meta.sessionDate,
+    promptTitle: meta.promptTitle,
+    sessionStressScore: meta.stressScore,
+  };
+}
 
 export default function SessionReplay() {
   const { patientId } = useParams();
@@ -15,37 +37,88 @@ export default function SessionReplay() {
   const patient = getPatientById(patientId);
   const baseReplay = useMemo(() => (patient ? getReplayForPatient(patient) : null), [patient]);
   const [azureReplay, setAzureReplay] = useState(null);
+  const [replayBanner, setReplayBanner] = useState({ kind: 'loading', text: 'Checking for Azure recording…' });
+  const [sessionsList, setSessionsList] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!patient?.id) {
       setAzureReplay(null);
+      setSessionsList([]);
+      setSelectedSessionId(null);
+      setReplayBanner({ kind: 'idle', text: '' });
       return;
     }
     let cancelled = false;
     setAzureReplay(null);
+    setSessionsList([]);
+    setSelectedSessionId(null);
+    setReplayBanner({ kind: 'loading', text: 'Checking for Azure recording…' });
     (async () => {
-      const meta = await fetchLatestReplayMeta(patient.id);
-      if (cancelled || !meta?.videoPath) return;
+      const [latestResult, manifest] = await Promise.all([
+        fetchLatestReplayMetaDetailed(patient.id),
+        fetchSessionsManifest(patient.id),
+      ]);
+      if (cancelled) return;
+
       const cfg = getAzureReplayConfig();
-      if (!cfg) return;
-      const videoUrl = buildBlobUrl(cfg.account, cfg.container, meta.videoPath, cfg.sas);
-      setAzureReplay({
-        videoUrl,
-        sessionId: meta.sessionId,
-        sessionDate: meta.sessionDate,
-        promptTitle: meta.promptTitle,
-        sessionStressScore: meta.stressScore,
-      });
+      const list =
+        manifest.length > 0
+          ? manifest
+          : latestResult.meta && (latestResult.meta.videoPath || latestResult.meta.drawingPath)
+            ? [latestResult.meta]
+            : [];
+
+      if (list.length > 0 && cfg) {
+        setReplayBanner({
+          kind: 'azure',
+          text: `${list.length} session recording(s) in Azure — newest first. Emotion timeline is still demo data.`,
+        });
+        setSessionsList(list);
+        const first = list[0];
+        setSelectedSessionId(first.sessionId);
+        setAzureReplay(buildAzureReplayFromMeta(first, cfg));
+      } else {
+        setReplayBanner(latestResult.banner);
+        setAzureReplay(null);
+      }
     })();
     return () => { cancelled = true; };
   }, [patient?.id]);
+
+  const onSessionSelect = (e) => {
+    const id = e.target.value;
+    setSelectedSessionId(id);
+    const cfg = getAzureReplayConfig();
+    const meta = sessionsList.find((s) => String(s.sessionId) === String(id));
+    if (meta && cfg) setAzureReplay(buildAzureReplayFromMeta(meta, cfg));
+  };
+
+  const handleDeleteSession = async () => {
+    if (selectedSessionId == null || !getAzureReplayConfig()) return;
+    if (!window.confirm('Delete this session’s video and drawing from Azure? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await deleteAzureSession(patient.id, selectedSessionId);
+      window.location.reload();
+    } catch (err) {
+      alert(
+        err?.message
+        || 'Delete failed. Ensure your SAS allows delete on blobs, and Blob CORS includes DELETE for this origin.'
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const replay = useMemo(() => {
     if (!baseReplay) return null;
     if (!azureReplay) return baseReplay;
     return {
       ...baseReplay,
-      videoUrl: azureReplay.videoUrl,
+      videoUrl: azureReplay.videoUrl ?? baseReplay.videoUrl,
+      drawingImageUrl: azureReplay.drawingImageUrl ?? null,
       sessionId: azureReplay.sessionId ?? baseReplay.sessionId,
       sessionDate: azureReplay.sessionDate ?? baseReplay.sessionDate,
       promptTitle: azureReplay.promptTitle || baseReplay.promptTitle,
@@ -132,7 +205,12 @@ export default function SessionReplay() {
             <p className="sr-header-meta">
               Clinical stress score this session: <strong>{replay.sessionStressScore != null ? replay.sessionStressScore.toFixed(1) : '—'}</strong>/10
               <span className="sr-sep">·</span>
-              Demo webcam feed with AI emotion timeline aligned to this session
+              {azureReplay
+                ? 'Webcam + canvas from Azure when available. Emotion timeline is demo data for the hackathon.'
+                : 'Sample clip + demo emotion timeline until an Azure upload exists for this patient.'}
+            </p>
+            <p className={`sr-replay-banner sr-replay-banner--${replayBanner.kind}`} role="status">
+              {replayBanner.text}
             </p>
           </div>
         </div>
@@ -144,8 +222,60 @@ export default function SessionReplay() {
         </div>
       </header>
 
+      {sessionsList.length > 0 && (
+        <div className="sr-session-bar">
+          <label className="sr-session-label">
+            <span>Recorded session</span>
+            <select
+              className="sr-session-select"
+              value={selectedSessionId != null ? String(selectedSessionId) : ''}
+              onChange={onSessionSelect}
+            >
+              {sessionsList.map((s) => (
+                <option key={String(s.sessionId)} value={String(s.sessionId)}>
+                  #{s.sessionId} — {s.promptTitle || 'Session'} —{' '}
+                  {s.sessionDate
+                    ? new Date(s.sessionDate).toLocaleString()
+                    : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn btn-ghost sr-session-delete"
+            onClick={handleDeleteSession}
+            disabled={deleting}
+          >
+            {deleting ? 'Deleting…' : 'Delete this session'}
+          </button>
+        </div>
+      )}
+
       <div className="sr-content">
         <div className="sr-video-col">
+          {azureReplay && !replay.drawingImageUrl && (
+            <div className="sr-drawing-missing-banner" role="status">
+              No drawing file in Azure for this session (only video was stored). Complete a new VoiceCanvas session with the latest build — it uploads <strong>drawing.png</strong> next to the video.
+            </div>
+          )}
+
+          {replay.drawingImageUrl && (
+            <div className="sr-drawing-panel">
+              <h3 className="sr-drawing-title">Drawing from this session</h3>
+              <div className="sr-drawing-frame">
+                <img
+                  key={`${replay.sessionId}-drawing`}
+                  src={replay.drawingImageUrl}
+                  alt="Patient drawing for this session"
+                  className="sr-drawing-img"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="sr-video-wrap">
             <video
               key={replay.videoUrl}
@@ -314,12 +444,21 @@ export default function SessionReplay() {
 
           <div className="sr-snapshots-card">
             <h3>Drawing Snapshots</h3>
+            <p className="sr-snapshots-hint">
+              {replay.drawingImageUrl
+                ? 'Final canvas from VoiceCanvas (Azure). Timeline entries below are demo placeholders.'
+                : 'Demo timeline labels — complete a VoiceCanvas session with Azure upload to see the real drawing above.'}
+            </p>
             <div className="sr-snap-list">
               {replay.drawingSnapshots.map((snap, i) => (
                 <button key={i} className="sr-snap-item" onClick={() => seekTo(snap.time)}>
                   <div className="sr-snap-time">0:{String(snap.time).padStart(2, '0')}</div>
                   <div className="sr-snap-thumb">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    {replay.drawingImageUrl && i === 0 ? (
+                      <img src={replay.drawingImageUrl} alt="" className="sr-snap-thumb-img" />
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    )}
                   </div>
                   <span className="sr-snap-desc">{snap.description}</span>
                 </button>
