@@ -22,6 +22,7 @@ export const MOCK_PATIENTS = [
     insuranceProvider: 'Aetna',
     lastSessionDate: daysAgo(1),
     avatar: 'R',
+    connectionState: 'accepted', // 'pending' | 'accepted' | null
     sessions: [
       {
         id: 1001, timestamp: daysAgo(20, 10), promptId: 'energy', stressScore: 8.1,
@@ -154,6 +155,7 @@ export const MOCK_PATIENTS = [
     insuranceProvider: 'UnitedHealth',
     lastSessionDate: daysAgo(2),
     avatar: 'M',
+    connectionState: 'pending', // Patient requested connection, doctor hasn't accepted yet
     sessions: [
       {
         id: 2001, timestamp: daysAgo(28, 9), promptId: 'energy', stressScore: 6.2,
@@ -254,6 +256,7 @@ export const MOCK_PATIENTS = [
     insuranceProvider: 'Cigna',
     lastSessionDate: daysAgo(3),
     avatar: 'M',
+    connectionState: 'accepted',
     sessions: [
       {
         id: 3001, timestamp: daysAgo(13, 14), promptId: 'body', stressScore: 9.1,
@@ -338,6 +341,7 @@ export const MOCK_PATIENTS = [
     insuranceProvider: 'Anthem',
     lastSessionDate: daysAgo(0),
     avatar: 'A',
+    connectionState: 'accepted',
     sessions: [
       {
         id: 4001, timestamp: daysAgo(33, 16), promptId: 'worry', stressScore: 7.5,
@@ -454,6 +458,7 @@ export const MOCK_PATIENTS = [
     insuranceProvider: 'Medicare/Cigna Supplement',
     lastSessionDate: daysAgo(5),
     avatar: 'J',
+    connectionState: 'accepted',
     sessions: [
       {
         id: 5001, timestamp: daysAgo(40, 10), promptId: 'safe', stressScore: 6.0,
@@ -561,4 +566,98 @@ export function getOverviewStats() {
     p.sessions.length >= 4 && p.sessions.some(s => s.stressScore >= 7)).length;
 
   return { totalPatients, activeAlerts, totalSessions, avgStress, crisisFlags, pendingInsurance };
+}
+
+/**
+ * Get alert badges for a patient based on clinical rules
+ * @param {Object} patient - Patient object with sessions
+ * @returns {Array} Array of alert badge objects
+ */
+export function getPatientAlerts(patient) {
+  const alerts = [];
+
+  if (!patient || !patient.sessions || patient.sessions.length === 0) {
+    return alerts;
+  }
+
+  const sessions = patient.sessions;
+  const latestSession = sessions[sessions.length - 1];
+
+  // CRISIS: stress ≥ 8 OR crisis_flag on latest session
+  if (latestSession.stressScore >= 8 || latestSession.result.crisis_flag) {
+    alerts.push({
+      type: 'crisis',
+      label: 'Crisis',
+      severity: 'critical',
+      color: 'red',
+      priority: 1
+    });
+  }
+
+  // THRESHOLD: stress ≥ 7 on 3+ sessions
+  const highStressSessions = sessions.filter(s => s.stressScore >= 7);
+  if (highStressSessions.length >= 3) {
+    alerts.push({
+      type: 'threshold',
+      label: 'Clinical Threshold',
+      severity: 'high',
+      color: 'orange',
+      priority: 2,
+      detail: `${highStressSessions.length} sessions ≥ 7.0`
+    });
+  }
+
+  // IMPROVING: stress down 2+ sessions in a row
+  if (sessions.length >= 2) {
+    let consecutiveDecreases = 0;
+    for (let i = sessions.length - 1; i > 0; i--) {
+      if (sessions[i].stressScore < sessions[i - 1].stressScore) {
+        consecutiveDecreases++;
+      } else {
+        break;
+      }
+    }
+    if (consecutiveDecreases >= 2) {
+      alerts.push({
+        type: 'improving',
+        label: 'Improving',
+        severity: 'positive',
+        color: 'green',
+        priority: 4,
+        detail: `${consecutiveDecreases} sessions declining`
+      });
+    }
+  }
+
+  // PENDING CONNECTION: patient requested link, not yet accepted
+  if (patient.connectionState === 'pending') {
+    alerts.push({
+      type: 'pending_connection',
+      label: 'Pending Connection',
+      severity: 'info',
+      color: 'blue',
+      priority: 3
+    });
+  }
+
+  // Sort by priority (lower number = higher priority)
+  return alerts.sort((a, b) => a.priority - b.priority);
+}
+
+/**
+ * Accept a pending connection request
+ * @param {string} patientId - Patient ID
+ * @returns {boolean} Success status
+ */
+export function acceptConnectionRequest(patientId) {
+  const patient = MOCK_PATIENTS.find(p => p.id === patientId);
+  if (patient && patient.connectionState === 'pending') {
+    patient.connectionState = 'accepted';
+    // In a real app, this would persist to localStorage or API
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`patient_${patientId}_connectionState`, 'accepted');
+    }
+    return true;
+  }
+  return false;
 }

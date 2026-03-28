@@ -27,6 +27,16 @@
   --gray-900: #0F172A;
   --gray-950: #020617;
 
+  /* Coral / Orange accent */
+  --coral-50: #FFF7ED;
+  --coral-100: #FFEDD5;
+  --coral-200: #FED7AA;
+  --coral-300: #FDBA74;
+  --coral-400: #FB923C;
+  --coral-500: #F97316;
+  --coral-600: #EA580C;
+  --coral-700: #C2410C;
+
   /* Accents */
   --rose-50: #FFF1F2;
   --rose-100: #FFE4E6;
@@ -51,6 +61,7 @@
   --violet-400: #A78BFA;
   --violet-500: #8B5CF6;
   --violet-600: #7C3AED;
+  --violet-700: #6D28D9;
 
   --teal-50: #F0FDFA;
   --teal-100: #CCFBF1;
@@ -59,13 +70,13 @@
   --teal-600: #0D9488;
   --teal-700: #0F766E;
 
-  --coral-50: #FFF7ED;
-  --coral-100: #FFEDD5;
-  --coral-500: #F97316;
-  --coral-600: #EA580C;
-  --coral-700: #C2410C;
-
+  /* Sky */
+  --sky-50: #F0F9FF;
+  --sky-100: #E0F2FE;
+  --sky-200: #BAE6FD;
+  --sky-400: #38BDF8;
   --sky-500: #0EA5E9;
+  --sky-700: #0369A1;
 
   /* Semantic */
   --primary: var(--green-500);

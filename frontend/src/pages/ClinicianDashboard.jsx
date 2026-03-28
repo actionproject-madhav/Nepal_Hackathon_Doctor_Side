@@ -1,9 +1,38 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_PATIENTS, getOverviewStats, getPatientAnalytics } from '../data/mockPatients';
+import {
+  MOCK_PATIENTS,
+  getOverviewStats,
+  getPatientAnalytics,
+  getPatientAlerts,
+  acceptConnectionRequest,
+} from '../data/mockPatients';
 import { DRAWING_PROMPTS } from '../utils/drawingPrompts';
 import './ClinicianDashboard.css';
+
+function getAvgStress(p) {
+  if (!p.sessions?.length) return 0;
+  return p.sessions.reduce((sum, s) => sum + s.stressScore, 0) / p.sessions.length;
+}
+
+function getStressTrend(p) {
+  if (!p.sessions || p.sessions.length < 2) return 'stable';
+  const a = p.sessions[p.sessions.length - 1].stressScore;
+  const b = p.sessions[p.sessions.length - 2].stressScore;
+  if (a < b - 0.05) return 'improving';
+  if (a > b + 0.05) return 'worsening';
+  return 'stable';
+}
+
+function timeAgo(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
 
 const SIDEBAR_ITEMS = [
   { id: 'overview', label: 'Overview', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
@@ -31,16 +60,27 @@ export default function ClinicianDashboard() {
   const [activeTab, setActiveTab] = useState('patients');
   const [selectedPatient, setSelectedPatient] = useState(MOCK_PATIENTS[0]);
   const [search, setSearch] = useState('');
+  const [filterRisk, setFilterRisk] = useState('all');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const stats = useMemo(() => getOverviewStats(), []);
+  const stats = useMemo(() => getOverviewStats(), [refreshKey]);
 
   const filteredPatients = useMemo(() => {
-    if (!search) return MOCK_PATIENTS;
-    return MOCK_PATIENTS.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.diagnosis.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search]);
+    let list = MOCK_PATIENTS;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        p =>
+          p.name.toLowerCase().includes(q) ||
+          p.diagnosis.toLowerCase().includes(q) ||
+          (p.languageLabel && p.languageLabel.toLowerCase().includes(q))
+      );
+    }
+    if (filterRisk !== 'all') {
+      list = list.filter(p => p.riskLevel === filterRisk);
+    }
+    return list;
+  }, [search, filterRisk, refreshKey]);
 
   const selectedAnalytics = useMemo(() => {
     if (!selectedPatient) return [];
@@ -53,6 +93,13 @@ export default function ClinicianDashboard() {
 
   function handleSidebarClick(id) {
     if (id === 'insurance') navigate('/insurance');
+  }
+
+  function handleAcceptConnection(e, patientId) {
+    e.stopPropagation(); // Prevent navigation to patient detail
+    if (acceptConnectionRequest(patientId)) {
+      setRefreshKey(prev => prev + 1); // Trigger re-render
+    }
   }
 
   return (
@@ -165,63 +212,169 @@ export default function ClinicianDashboard() {
             <span className="pt-count">{filteredPatients.length} patients</span>
           </div>
 
-          <table className="patients-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Name</th>
-                <th>Diagnosis</th>
-                <th>Sessions</th>
-                <th>Stress</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPatients.map((patient) => {
-                const latestStress = getLatestStress(patient);
-                const isSelected = selectedPatient?.id === patient.id;
-                return (
-                  <tr
-                    key={patient.id}
-                    className={`pt-row ${isSelected ? 'pt-row-selected' : ''}`}
-                    onClick={() => setSelectedPatient(patient)}
-                  >
-                    <td>
-                      <div className={`pt-avatar pt-av-${patient.riskLevel}`}>{patient.avatar}</div>
-                    </td>
-                    <td>
-                      <div className="pt-name-cell">
-                        <span className="pt-name">{patient.name}</span>
-                        <span className="pt-sub">{patient.languageLabel} · {patient.age}y</span>
+        <motion.div
+          className="cd-toolbar"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="cd-search-wrap">
+            <svg className="cd-search-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
+            </svg>
+            <input
+              type="text"
+              className="cd-search"
+              placeholder="Search patients, diagnoses, languages..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="cd-filter-pills">
+            {['all', 'high', 'moderate', 'low'].map(level => (
+              <button
+                key={level}
+                type="button"
+                className={`cd-filter-pill ${filterRisk === level ? 'cd-fp-active' : ''}`}
+                onClick={() => setFilterRisk(level)}
+              >
+                {level === 'all' ? 'All' : level.charAt(0).toUpperCase() + level.slice(1)}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        <div className="cd-patient-list">
+          {filteredPatients.length === 0 ? (
+            <div className="cd-empty-search">No patients match your search or filters.</div>
+          ) : (
+            filteredPatients.map((patient, i) => {
+              const trend = getStressTrend(patient);
+              const latestStress = getLatestStress(patient);
+              const avgStress = getAvgStress(patient);
+              const hasCrisis = patient.sessions.some(s => s.result.crisis_flag);
+              const lastSession = patient.sessions[patient.sessions.length - 1];
+              const alerts = getPatientAlerts(patient);
+              const hasPendingConnection = alerts.some(a => a.type === 'pending_connection');
+
+              return (
+                <motion.div
+                  key={patient.id}
+                  className={`cd-patient-row card${selectedPatient?.id === patient.id ? ' cd-patient-row-selected' : ''}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12 + i * 0.06 }}
+                  onClick={() => setSelectedPatient(patient)}
+                >
+                  <div className="cd-pr-left">
+                    <div className={`cd-pr-avatar cd-pr-avatar-${patient.riskLevel}`}>
+                      {patient.avatar}
+                    </div>
+                    <div className="cd-pr-info">
+                      <div className="cd-pr-name-row">
+                        <h3>{patient.name}</h3>
+                        <span className="cd-pr-age">{patient.age}y</span>
+                        <span className="cd-pr-lang">{patient.languageLabel}</span>
+                        {hasCrisis && <span className="cd-pr-crisis-badge">CRISIS</span>}
                       </div>
-                    </td>
-                    <td>
-                      <span className="pt-diagnosis-text">{patient.diagnosis.split(';')[0]}</span>
-                    </td>
-                    <td>
-                      <span className="pt-num">{patient.sessions.length}</span>
-                    </td>
-                    <td>
-                      <span className={`pt-stress ${latestStress >= 7 ? 'pts-high' : latestStress >= 5 ? 'pts-mid' : 'pts-low'}`}>
+                      <p className="cd-pr-diagnosis">{patient.diagnosis}</p>
+                      <div className="cd-pr-tags">
+                        <span className={`cd-pr-tag cd-pr-tag-${patient.riskLevel}`}>
+                          {patient.riskLevel}
+                        </span>
+                        {patient.isNonverbal && <span className="cd-pr-tag cd-pr-tag-nonverbal">Nonverbal</span>}
+                        <span className="cd-pr-tag cd-pr-tag-comm">{patient.communicationLevel}</span>
+                      </div>
+
+                      {alerts.length > 0 && (
+                        <div className="cd-pr-alerts">
+                          {alerts.map((alert, idx) => (
+                            <span key={idx} className={`cd-alert-badge cd-alert-${alert.color}`} title={alert.detail}>
+                              {alert.type === 'crisis' && '🚨'}
+                              {alert.type === 'threshold' && '⚠️'}
+                              {alert.type === 'improving' && '✓'}
+                              {alert.type === 'pending_connection' && '🔗'}
+                              {alert.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="cd-pr-right">
+                    <div className="cd-pr-metric">
+                      <span className="cd-pr-metric-label">Sessions</span>
+                      <span className="cd-pr-metric-val">{patient.sessions.length}</span>
+                    </div>
+                    <div className="cd-pr-metric">
+                      <span className="cd-pr-metric-label">Latest</span>
+                      <span className={`cd-pr-metric-val ${latestStress >= 7 ? 'cd-val-high' : latestStress >= 5 ? 'cd-val-mid' : 'cd-val-low'}`}>
                         {latestStress.toFixed(1)}
                       </span>
-                    </td>
-                    <td>
-                      <span className={`pt-status-badge pt-sb-${patient.riskLevel}`}>
-                        {patient.riskLevel}
+                    </div>
+                    <div className="cd-pr-metric">
+                      <span className="cd-pr-metric-label">Average</span>
+                      <span className={`cd-pr-metric-val ${avgStress >= 7 ? 'cd-val-high' : avgStress >= 5 ? 'cd-val-mid' : 'cd-val-low'}`}>
+                        {avgStress.toFixed(1)}
                       </span>
-                    </td>
-                    <td>
-                      <button className="pt-go-btn" onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/${patient.id}`); }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                    </div>
+                    <div className="cd-pr-metric">
+                      <span className="cd-pr-metric-label">Trend</span>
+                      <span className={`cd-pr-trend cd-trend-${trend}`}>
+                        {trend === 'improving' ? '↓' : trend === 'worsening' ? '↑' : '→'}
+                        {' '}{trend}
+                      </span>
+                    </div>
+
+                    <div className="cd-pr-sparkline">
+                      <svg viewBox={`0 0 ${Math.max(patient.sessions.length, 1) * 16} 32`} className="cd-sparkline-svg">
+                        <polyline
+                          fill="none"
+                          stroke={latestStress >= 7 ? 'var(--error)' : latestStress >= 5 ? 'var(--warning)' : 'var(--success)'}
+                          strokeWidth="2"
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                          points={patient.sessions.map((s, idx) =>
+                            `${idx * 16 + 8},${32 - (s.stressScore / 10) * 28}`
+                          ).join(' ')}
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="cd-pr-last-seen">
+                      {lastSession ? timeAgo(lastSession.timestamp) : '—'}
+                    </div>
+
+                    {hasPendingConnection && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary cd-pr-accept-btn"
+                        onClick={(e) => handleAcceptConnection(e, patient.id)}
+                      >
+                        Accept Connection
                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    )}
+
+                    <button
+                      type="button"
+                      className="cd-pr-arrow"
+                      aria-label="Open patient record"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/dashboard/${patient.id}`);
+                      }}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
         </div>
 
         {/* Stress Chart */}

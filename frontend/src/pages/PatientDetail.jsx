@@ -5,6 +5,7 @@ import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { DRAWING_PROMPTS } from '../utils/drawingPrompts';
 import { generateFHIRObservation, downloadFHIRJSON } from '../utils/fhirExport';
 import { exportClinicalNotePDF } from '../utils/pdfExport';
+import { speakText, stopSpeech, generateClinicalSummary } from '../utils/ttsService';
 import './PatientDetail.css';
 
 export default function PatientDetail() {
@@ -14,6 +15,8 @@ export default function PatientDetail() {
   const [expandedSession, setExpandedSession] = useState(null);
   const [showFHIR, setShowFHIR] = useState(false);
   const [generatedFHIR, setGeneratedFHIR] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playingSessionId, setPlayingSessionId] = useState(null);
 
   const analytics = useMemo(() => {
     if (!patient) return [];
@@ -63,6 +66,35 @@ export default function PatientDetail() {
     const fhir = generateFHIRObservation(latestAnalysis, [], { name: patient.name, id: patient.id });
     setGeneratedFHIR(fhir);
     setShowFHIR(true);
+  };
+
+  const handlePlayClinicalSummary = async (session) => {
+    if (isPlaying && playingSessionId === session.id) {
+      // Stop if already playing this session
+      stopSpeech();
+      setIsPlaying(false);
+      setPlayingSessionId(null);
+      return;
+    }
+
+    // Stop any current playback
+    stopSpeech();
+    setIsPlaying(true);
+    setPlayingSessionId(session.id);
+
+    try {
+      const summary = generateClinicalSummary(session);
+      const result = await speakText(summary, { preferElevenLabs: true });
+
+      if (!result.success) {
+        console.error('TTS failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Error playing clinical summary:', error);
+    } finally {
+      setIsPlaying(false);
+      setPlayingSessionId(null);
+    }
   };
 
   return (
@@ -264,6 +296,23 @@ export default function PatientDetail() {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25 }}
                       >
+                        {/* TTS Playback Button */}
+                        <div className="pd-tts-bar">
+                          <button
+                            className={`btn btn-sm ${isPlaying && playingSessionId === session.id ? 'btn-secondary' : 'btn-primary'}`}
+                            onClick={() => handlePlayClinicalSummary(session)}
+                          >
+                            {isPlaying && playingSessionId === session.id ? (
+                              <>⏸ Stop Playback</>
+                            ) : (
+                              <>▶ Play Clinical Summary</>
+                            )}
+                          </button>
+                          <span className="pd-tts-hint">
+                            {isPlaying && playingSessionId === session.id ? 'Speaking...' : 'Hear AI-generated summary'}
+                          </span>
+                        </div>
+
                         <div className="pd-soap-grid">
                           <div className="pd-soap-card pd-soap-s">
                             <span className="pd-soap-letter">S</span>
