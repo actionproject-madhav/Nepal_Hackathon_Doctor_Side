@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
+import { MOCK_REPLAY, getEmotionColor } from '../data/mockReplay';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
 import './InsuranceForm.css';
 
@@ -350,21 +351,133 @@ export default function InsuranceForm() {
                     </div>
                   </div>
 
-                  <div className="ins-sessions-card">
-                    <h3>Clinical Evidence Summary</h3>
-                    <div className="ins-evidence-stats">
-                      <div className="ins-ev-stat">
-                        <span className="ins-ev-val">{sessions.length}</span>
-                        <span className="ins-ev-label">Sessions</span>
+                  <div className="ins-evidence-package">
+                    <div className="ins-ep-header">
+                      <h3>Evidence Package</h3>
+                      <span className="ins-ep-badge">AUTO-COMPILED</span>
+                    </div>
+                    <p className="ins-ep-desc">All data below is automatically attached to this claim submission as supporting clinical evidence.</p>
+
+                    <div className="ins-ep-section">
+                      <h4>Session Data</h4>
+                      <div className="ins-evidence-stats">
+                        <div className="ins-ev-stat">
+                          <span className="ins-ev-val">{sessions.length}</span>
+                          <span className="ins-ev-label">Sessions</span>
+                        </div>
+                        <div className="ins-ev-stat">
+                          <span className="ins-ev-val">{avgStress.toFixed(1)}</span>
+                          <span className="ins-ev-label">Avg Stress</span>
+                        </div>
+                        <div className="ins-ev-stat">
+                          <span className="ins-ev-val">{analytics.filter(a => a.thresholdMet).length}</span>
+                          <span className="ins-ev-label">Above Threshold</span>
+                        </div>
                       </div>
-                      <div className="ins-ev-stat">
-                        <span className="ins-ev-val">{avgStress.toFixed(1)}</span>
-                        <span className="ins-ev-label">Avg Stress</span>
+                    </div>
+
+                    {patient.id === MOCK_REPLAY.patientId && (
+                      <>
+                        <div className="ins-ep-section">
+                          <h4>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Video Replay Analysis
+                          </h4>
+                          <div className="ins-ep-replay-row">
+                            <div className="ins-ep-replay-stat">
+                              <span className="ins-ep-rs-val">{MOCK_REPLAY.emotionTimeline.length}</span>
+                              <span className="ins-ep-rs-label">Emotion frames analyzed</span>
+                            </div>
+                            <div className="ins-ep-replay-stat">
+                              <span className="ins-ep-rs-val">{MOCK_REPLAY.overallAnalysis.dominantEmotion}</span>
+                              <span className="ins-ep-rs-label">Dominant emotion</span>
+                            </div>
+                            <div className="ins-ep-replay-stat">
+                              <span className="ins-ep-rs-val" style={{ color: MOCK_REPLAY.overallAnalysis.positiveShift ? 'var(--green-600)' : 'var(--rose-500)' }}>
+                                {MOCK_REPLAY.overallAnalysis.positiveShift ? '+' : ''}{(MOCK_REPLAY.overallAnalysis.endValence - MOCK_REPLAY.overallAnalysis.startValence).toFixed(2)}
+                              </span>
+                              <span className="ins-ep-rs-label">Valence shift</span>
+                            </div>
+                          </div>
+                          <div className="ins-ep-emotion-bar">
+                            {MOCK_REPLAY.emotionTimeline.map((evt, i) => (
+                              <div key={i} className="ins-ep-eb-seg" style={{ background: getEmotionColor(evt.emotion) }} title={`${evt.label}: ${evt.emotion}`} />
+                            ))}
+                          </div>
+                          <button className="ins-ep-replay-link" onClick={() => navigate(`/replay/${patient.id}`)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Review full session replay
+                          </button>
+                        </div>
+
+                        <div className="ins-ep-section">
+                          <h4>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            Brain Sensory & Biometric Data
+                          </h4>
+                          <div className="ins-ep-bio-grid">
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Stress indicators detected</span>
+                              <div className="ins-ep-bio-tags">
+                                {MOCK_REPLAY.overallAnalysis.stressIndicators.map(ind => (
+                                  <span key={ind} className="ins-ep-tag ins-ep-tag-stress">{ind.replace(/_/g, ' ')}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Positive indicators detected</span>
+                              <div className="ins-ep-bio-tags">
+                                {MOCK_REPLAY.overallAnalysis.positiveIndicators.map(ind => (
+                                  <span key={ind} className="ins-ep-tag ins-ep-tag-positive">{ind.replace(/_/g, ' ')}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Peak stress event</span>
+                              <span className="ins-ep-bio-val ins-ep-bio-negative">{MOCK_REPLAY.overallAnalysis.peakStress.emotion} at 0:{String(MOCK_REPLAY.overallAnalysis.peakStress.time).padStart(2, '0')}</span>
+                            </div>
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Peak positive event</span>
+                              <span className="ins-ep-bio-val ins-ep-bio-positive">{MOCK_REPLAY.overallAnalysis.peakPositive.emotion} at 0:{String(MOCK_REPLAY.overallAnalysis.peakPositive.time).padStart(2, '0')}</span>
+                            </div>
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Verbal attempts</span>
+                              <span className="ins-ep-bio-val">{MOCK_REPLAY.overallAnalysis.verbalAttempts}</span>
+                            </div>
+                            <div className="ins-ep-bio-item">
+                              <span className="ins-ep-bio-label">Smile count</span>
+                              <span className="ins-ep-bio-val">{MOCK_REPLAY.overallAnalysis.smileCount}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="ins-ep-section">
+                      <h4>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                        Drawing Analysis Indicators
+                      </h4>
+                      <div className="ins-ep-drawing-grid">
+                        {sessions.slice(-3).reverse().map((s, i) => (
+                          <div key={i} className="ins-ep-drawing-item">
+                            <span className="ins-ep-di-date">{new Date(s.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                            <div className="ins-ep-di-indicators">
+                              <span className={s.result.indicators.isolation >= 3 ? 'ins-ep-di-flag' : ''}>Isolation: {s.result.indicators.isolation}/5</span>
+                              <span className={s.result.indicators.red_pct >= 40 ? 'ins-ep-di-flag' : ''}>Red: {s.result.indicators.red_pct}%</span>
+                              <span>Pressure: {s.result.indicators.line_pressure}</span>
+                            </div>
+                            <span className={`ins-ep-di-score ${s.stressScore >= 7 ? 'ins-ep-di-high' : s.stressScore >= 5 ? 'ins-ep-di-mid' : 'ins-ep-di-low'}`}>
+                              {s.stressScore.toFixed(1)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="ins-ev-stat">
-                        <span className="ins-ev-val">{analytics.filter(a => a.thresholdMet).length}</span>
-                        <span className="ins-ev-label">Above Threshold</span>
-                      </div>
+                    </div>
+
+                    <div className="ins-ep-attached">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                      <span>{sessions.length} session reports + {patient.id === MOCK_REPLAY.patientId ? '1 video replay + biometric data' : 'session data'} + SOAP notes + FHIR observations will be attached</span>
                     </div>
                   </div>
                 </div>
@@ -401,6 +514,19 @@ export default function InsuranceForm() {
                   </div>
                   <div className="ins-sd-row">
                     <span>Sessions attached</span><strong>{sessions.length}</strong>
+                  </div>
+                  {patient.id === MOCK_REPLAY.patientId && (
+                    <div className="ins-sd-row">
+                      <span>Video replay evidence</span><strong className="ins-sd-green">1 session recording + {MOCK_REPLAY.emotionTimeline.length} emotion frames</strong>
+                    </div>
+                  )}
+                  {patient.id === MOCK_REPLAY.patientId && (
+                    <div className="ins-sd-row">
+                      <span>Biometric markers</span><strong>{MOCK_REPLAY.overallAnalysis.stressIndicators.length} stress + {MOCK_REPLAY.overallAnalysis.positiveIndicators.length} positive</strong>
+                    </div>
+                  )}
+                  <div className="ins-sd-row">
+                    <span>SOAP notes attached</span><strong>{sessions.length}</strong>
                   </div>
                   <div className="ins-sd-row">
                     <span>Parity violations flagged</span><strong>{parityViolations.length}</strong>
@@ -487,7 +613,10 @@ export default function InsuranceForm() {
                           <hr />
                           <p>Dear Appeals Officer,</p>
                           <p>We are writing to formally appeal the denial of pre-authorization for {formData.patientName} under the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
-                          <p><strong>Clinical Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions via VoiceCanvas. Average stress score: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} of {sessions.length} sessions. {sessions.filter(s => s.result.crisis_flag).length > 0 ? `Crisis flags triggered in ${sessions.filter(s => s.result.crisis_flag).length} session(s).` : ''}</p>
+                          <p><strong>Clinical Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions via VoiceCanvas. Average stress score: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} of {sessions.length} sessions. {sessions.filter(s => s.result.crisis_flag).length > 0 ? `Crisis flags triggered in ${sessions.filter(s => s.result.crisis_flag).length} session(s). ` : ''}</p>
+                          {patient.id === MOCK_REPLAY.patientId && (
+                            <p><strong>Video & Biometric Evidence:</strong> Session replay with {MOCK_REPLAY.emotionTimeline.length} AI-analyzed emotional states including detected stress indicators (brow furrow, jaw clench, heavy line pressure). Brain sensory analysis confirmed peak frustration at 0:{String(MOCK_REPLAY.overallAnalysis.peakStress.time).padStart(2, '0')} with valence {MOCK_REPLAY.overallAnalysis.peakStress.valence}. Patient showed {MOCK_REPLAY.overallAnalysis.verbalAttempts} verbal attempt(s) — subvocalization without audio production, consistent with documented nonverbal condition. Full video evidence attached.</p>
+                          )}
                           <p><strong>Parity Violations:</strong> {parityViolations.map(v => `${v.type} (${v.code})`).join('; ') || 'None identified'}.</p>
                           <p><strong>Legal Precedent:</strong> {matchedPrecedents.map(p => `${p.case} — ${p.outcome}`).join('; ')}. Average win rate: {avgWinRate}%.</p>
                           <p><strong>Demand:</strong> We request immediate approval of the requested services within 30 days per {matchedInsurer?.policies.appealWindow || '180 days'} appeal window requirements.</p>

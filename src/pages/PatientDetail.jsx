@@ -5,8 +5,6 @@ import { getPatientById, getPatientAnalytics } from '../data/mockPatients';
 import { DRAWING_PROMPTS } from '../utils/drawingPrompts';
 import { generateFHIRObservation, downloadFHIRJSON } from '../utils/fhirExport';
 import { exportClinicalNotePDF } from '../utils/pdfExport';
-import { speakText, stopSpeech, generateClinicalSummary } from '../utils/ttsService';
-import { MOCK_REPLAY, getEmotionColor } from '../data/mockReplay';
 import './PatientDetail.css';
 
 export default function PatientDetail() {
@@ -16,8 +14,6 @@ export default function PatientDetail() {
   const [expandedSession, setExpandedSession] = useState(null);
   const [showFHIR, setShowFHIR] = useState(false);
   const [generatedFHIR, setGeneratedFHIR] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playingSessionId, setPlayingSessionId] = useState(null);
 
   const analytics = useMemo(() => {
     if (!patient) return [];
@@ -67,35 +63,6 @@ export default function PatientDetail() {
     const fhir = generateFHIRObservation(latestAnalysis, [], { name: patient.name, id: patient.id });
     setGeneratedFHIR(fhir);
     setShowFHIR(true);
-  };
-
-  const handlePlayClinicalSummary = async (session) => {
-    if (isPlaying && playingSessionId === session.id) {
-      // Stop if already playing this session
-      stopSpeech();
-      setIsPlaying(false);
-      setPlayingSessionId(null);
-      return;
-    }
-
-    // Stop any current playback
-    stopSpeech();
-    setIsPlaying(true);
-    setPlayingSessionId(session.id);
-
-    try {
-      const summary = generateClinicalSummary(session);
-      const result = await speakText(summary, { preferElevenLabs: true });
-
-      if (!result.success) {
-        console.error('TTS failed:', result.error);
-      }
-    } catch (error) {
-      console.error('Error playing clinical summary:', error);
-    } finally {
-      setIsPlaying(false);
-      setPlayingSessionId(null);
-    }
   };
 
   return (
@@ -158,47 +125,6 @@ export default function PatientDetail() {
               <span className="pd-stat-val">{sessions.filter(s => s.stressScore >= 7).length}</span>
               <span className="pd-stat-label">Alerts</span>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Session Replay Banner */}
-        <motion.div className="pd-replay-banner card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <div className="pd-rb-left">
-            <div className="pd-rb-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            </div>
-            <div className="pd-rb-info">
-              <h3>Session Replay with Emotional Analysis</h3>
-              <p>
-                Review webcam recordings with AI-analyzed facial expressions, brain sensory data,
-                and emotional state at every timestamp. All evidence is attached when filing a claim.
-              </p>
-            </div>
-          </div>
-          <div className="pd-rb-stats">
-            <div className="pd-rb-stat">
-              <span className="pd-rb-stat-val">{MOCK_REPLAY.emotionTimeline.length}</span>
-              <span className="pd-rb-stat-label">Emotion Events</span>
-            </div>
-            <div className="pd-rb-stat">
-              <span className="pd-rb-stat-val">{MOCK_REPLAY.overallAnalysis.stressIndicators.length}</span>
-              <span className="pd-rb-stat-label">Stress Markers</span>
-            </div>
-            <div className="pd-rb-stat">
-              <span className="pd-rb-stat-val" style={{ color: MOCK_REPLAY.overallAnalysis.positiveShift ? 'var(--success)' : 'var(--error)' }}>
-                {MOCK_REPLAY.overallAnalysis.positiveShift ? '+' : ''}{(MOCK_REPLAY.overallAnalysis.endValence - MOCK_REPLAY.overallAnalysis.startValence).toFixed(2)}
-              </span>
-              <span className="pd-rb-stat-label">Valence Shift</span>
-            </div>
-            <button className="btn btn-primary pd-rb-btn" onClick={() => navigate(`/replay/${patient.id}`)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Watch Replay
-            </button>
-          </div>
-          <div className="pd-rb-emotion-bar">
-            {MOCK_REPLAY.emotionTimeline.map((evt, i) => (
-              <div key={i} className="pd-rb-eb-seg" style={{ background: getEmotionColor(evt.emotion) }} title={`${evt.label}: ${evt.emotion}`} />
-            ))}
           </div>
         </motion.div>
 
@@ -349,23 +275,6 @@ export default function PatientDetail() {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25 }}
                       >
-                        {/* TTS Playback Button */}
-                        <div className="pd-tts-bar">
-                          <button
-                            className={`btn btn-sm ${isPlaying && playingSessionId === session.id ? 'btn-secondary' : 'btn-primary'}`}
-                            onClick={() => handlePlayClinicalSummary(session)}
-                          >
-                            {isPlaying && playingSessionId === session.id ? (
-                              <>⏸ Stop Playback</>
-                            ) : (
-                              <>▶ Play Clinical Summary</>
-                            )}
-                          </button>
-                          <span className="pd-tts-hint">
-                            {isPlaying && playingSessionId === session.id ? 'Speaking...' : 'Hear AI-generated summary'}
-                          </span>
-                        </div>
-
                         <div className="pd-soap-grid">
                           <div className="pd-soap-card pd-soap-s">
                             <span className="pd-soap-letter">S</span>
@@ -441,7 +350,7 @@ export default function PatientDetail() {
         <motion.div className="pd-ehr card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <h3>Clinical Export & Insurance</h3>
           <p className="pd-ehr-desc">
-            Generate FHIR-compliant clinical observations, download clinical PDFs, review session replays with emotional analysis, or submit to insurance with Reclaimant auto-appeal.
+            Generate FHIR-compliant clinical observations, download clinical PDFs, or submit to insurance with Reclaimant auto-appeal.
           </p>
           <div className="pd-ehr-actions">
             <button className="btn btn-primary" onClick={handleGenerateEHR}>Generate FHIR Observation</button>
@@ -454,9 +363,6 @@ export default function PatientDetail() {
               }
             }}>
               Download Clinical PDF
-            </button>
-            <button className="btn btn-outline" onClick={() => navigate(`/replay/${patient.id}`)}>
-              Session Replay
             </button>
             <button className="btn btn-outline" onClick={() => navigate('/insurance', { state: { patientId: patient.id, result: latestAnalysis } })}>
               File Insurance Claim

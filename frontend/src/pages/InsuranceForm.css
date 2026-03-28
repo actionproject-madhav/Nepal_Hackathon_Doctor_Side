@@ -936,6 +936,221 @@
   background: var(--gray-200);
 }
 
+/* ===== Evidence Package ===== */
+.ins-evidence-package {
+  background: var(--bg-white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  padding: 22px;
+}
+
+.ins-ep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ins-ep-header h3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.ins-ep-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--green-50);
+  color: var(--green-700);
+  letter-spacing: 0.05em;
+}
+
+.ins-ep-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.ins-ep-section {
+  padding: 14px 0;
+  border-top: 1px solid var(--gray-100);
+}
+
+.ins-ep-section h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Replay row */
+.ins-ep-replay-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ins-ep-replay-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ins-ep-rs-val {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.ins-ep-rs-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ins-ep-emotion-bar {
+  display: flex;
+  height: 6px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.ins-ep-eb-seg {
+  flex: 1;
+  border-radius: var(--radius-full);
+  opacity: 0.7;
+}
+
+.ins-ep-replay-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--green-600);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.ins-ep-replay-link:hover { text-decoration: underline; }
+
+/* Biometric grid */
+.ins-ep-bio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ins-ep-bio-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ins-ep-bio-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ins-ep-bio-val {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.ins-ep-bio-negative { color: var(--rose-500); }
+.ins-ep-bio-positive { color: var(--green-600); }
+
+.ins-ep-bio-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ins-ep-tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.ins-ep-tag-stress { background: var(--rose-50); color: var(--rose-600); }
+.ins-ep-tag-positive { background: var(--green-50); color: var(--green-700); }
+
+/* Drawing indicators */
+.ins-ep-drawing-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ins-ep-drawing-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+}
+
+.ins-ep-di-date {
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 50px;
+}
+
+.ins-ep-di-indicators {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.ins-ep-di-flag { color: var(--rose-500); font-weight: 700; }
+
+.ins-ep-di-score {
+  font-weight: 800;
+  font-size: 0.78rem;
+  min-width: 28px;
+  text-align: right;
+}
+
+.ins-ep-di-high { color: var(--rose-500); }
+.ins-ep-di-mid { color: var(--amber-500); }
+.ins-ep-di-low { color: var(--green-600); }
+
+/* Attached files footer */
+.ins-ep-attached {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--gray-100);
+  margin-top: 14px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ins-ep-attached svg { color: var(--green-500); flex-shrink: 0; }
+
 /* Disclaimer */
 .ins-disclaimer {
   text-align: center;
