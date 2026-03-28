@@ -171,28 +171,28 @@ export default function ClinicianDashboard() {
           </div>
         </header>
 
-        {/* Top Metrics Row - As per requirements.md */}
+        {/* Top Metrics Row - Standardized Minimalism */}
         <div className="med-top-metrics">
           <div className="med-metric-card">
-            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
+            <div className="mmc-info">
               <span className="mmc-val">{stats.totalPatients}</span>
               <span className="mmc-label">Active Patients</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
+            <div className="mmc-info">
               <span className="mmc-val">{stats.totalSessions}</span>
               <span className="mmc-label">Total Sessions</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
+            <div className="mmc-info">
               <span className="mmc-val" style={{ color: stats.pendingInsurance > 0 ? 'var(--rose-500)' : 'inherit' }}>{stats.pendingInsurance}</span>
               <span className="mmc-label">Pending Insurance</span>
             </div>
           </div>
           <div className="med-metric-card">
-            <div className="mmc-info" style={{ alignItems: 'flex-start' }}>
+            <div className="mmc-info">
               <span className="mmc-val" style={{ color: 'var(--emerald-600)' }}>$35,400</span>
               <span className="mmc-label">Recovered (YTD)</span>
             </div>
@@ -435,33 +435,50 @@ export default function ClinicianDashboard() {
                 {filteredProviders.map(provider => (
                   <div key={provider.id} className={`mc-net-card ${provider.connected ? 'connected' : ''}`}>
                     <div className="mc-net-card-top">
-                      <div className="mc-net-icon" style={provider.connected ? { background: `linear-gradient(135deg, var(--emerald-500), var(--emerald-400))` } : {}}>
+                      <div className="mc-net-icon" style={{ background: provider.color }}>
                         {provider.letter}
                       </div>
                       <div className="mc-net-info">
                         <h3>{provider.name}</h3>
-                        <span className={`mc-net-status ${provider.connected ? 'connected' : 'disconnected'}`}>
-                          {provider.connected ? 'In-network' : 'Out-of-network'}
-                        </span>
+                        <div className="mc-net-meta-row">
+                          <span className={`mc-net-status ${provider.connected ? 'connected' : 'disconnected'}`}>
+                            {provider.connected ? 'Connected' : 'Contracted'}
+                          </span>
+                          {provider.policies.parityCompliant === 'Yes' && <span className="mc-net-parity">Parity Guaranteed</span>}
+                        </div>
                       </div>
                     </div>
                     
                     <p className="mc-net-desc">{provider.desc}</p>
-                    
-                    <div className="mc-net-cats">
-                      {provider.categories.slice(0, 3).map(cat => (
-                        <span key={cat} className="mc-net-cat">{cat}</span>
-                      ))}
-                    </div>
 
+                    <div className="mc-net-policy-grid">
+                      <div className="mc-net-policy-item">
+                        <span className="mc-npi-label">Denial Rate</span>
+                        <span className="mc-npi-val">{provider.policies.denialRate}</span>
+                      </div>
+                      <div className="mc-net-policy-item">
+                        <span className="mc-npi-label">Avg Processing</span>
+                        <span className="mc-npi-val">{provider.policies.avgProcessing}</span>
+                      </div>
+                    </div>
+                    
                     <div className="mc-net-footer">
                       <div className="mc-net-stats">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                        {patientsPerInsurer[provider.id] || 0} Patients
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Verified</span>
                       </div>
-                      
                       <label className="mc-net-toggle">
-                        <input type="checkbox" checked={provider.connected} onChange={() => toggleConnection(provider.id)} />
+                        <input 
+                          type="checkbox" 
+                          checked={provider.connected} 
+                          onChange={(e) => {
+                            const newConnected = e.target.checked 
+                              ? [...providers.filter(p => p.connected).map(p => p.id), provider.id]
+                              : providers.filter(p => p.connected && p.id !== provider.id).map(p => p.id);
+                            setConnectedIds(newConnected);
+                            setProviders(getAllProviders());
+                          }}
+                        />
                         <span className="mc-toggle-slider"></span>
                       </label>
                     </div>

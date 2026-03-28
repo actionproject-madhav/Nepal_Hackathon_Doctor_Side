@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getPatientById } from '../data/mockPatients';
-import { MOCK_REPLAY, getEmotionColor, getValenceLabel } from '../data/mockReplay';
+import { getReplayForPatient, getEmotionColor, getValenceLabel } from '../data/mockReplay';
 import './SessionReplay.css';
 
 export default function SessionReplay() {
@@ -12,7 +12,7 @@ export default function SessionReplay() {
   const timelineRef = useRef(null);
 
   const patient = getPatientById(patientId);
-  const replay = MOCK_REPLAY;
+  const replay = useMemo(() => (patient ? getReplayForPatient(patient) : null), [patient]);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -81,7 +81,20 @@ export default function SessionReplay() {
           </button>
           <div>
             <h1>Session Replay</h1>
-            <p>{patient.name} — {replay.promptTitle} — {new Date(replay.sessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <p className="sr-header-sub">
+              <strong>{patient.name}</strong>
+              <span className="sr-sep">·</span>
+              Session #{replay.sessionId}
+              <span className="sr-sep">·</span>
+              {replay.promptTitle}
+              <span className="sr-sep">·</span>
+              {new Date(replay.sessionDate).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            </p>
+            <p className="sr-header-meta">
+              Clinical stress score this session: <strong>{replay.sessionStressScore != null ? replay.sessionStressScore.toFixed(1) : '—'}</strong>/10
+              <span className="sr-sep">·</span>
+              Demo webcam feed with AI emotion timeline aligned to this session
+            </p>
           </div>
         </div>
         <div className="sr-header-right">

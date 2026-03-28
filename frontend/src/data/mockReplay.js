@@ -1,8 +1,9 @@
 /**
- * Mock session replay data for patient Raju Karki (pt-001), session 1007.
- * Simulates a ~2-minute art therapy session captured via webcam with
- * AI-analyzed emotional states at each timestamp.
+ * Mock session replay: demo webcam footage + AI emotion timeline.
+ * Use `getReplayForPatient(patient)` to bind this to the patient's real session id, prompt, and date.
  */
+
+import { DRAWING_PROMPTS } from '../utils/drawingPrompts';
 
 export const REPLAY_VIDEO_URL = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4';
 
@@ -79,4 +80,26 @@ export function getValenceLabel(v) {
   if (v >= 0.4) return 'Neutral';
   if (v >= 0.25) return 'Negative';
   return 'Very Negative';
+}
+
+/** Binds demo video + timeline to this patient's latest session from mockPatients. */
+export function getReplayForPatient(patient) {
+  if (!patient?.sessions?.length) {
+    return {
+      ...MOCK_REPLAY,
+      patientId: patient?.id ?? '',
+      patientName: patient?.name ?? 'Patient',
+    };
+  }
+  const latest = patient.sessions[patient.sessions.length - 1];
+  const prompt = DRAWING_PROMPTS.find((p) => p.id === latest.promptId);
+  return {
+    ...MOCK_REPLAY,
+    patientId: patient.id,
+    patientName: patient.name,
+    sessionId: latest.id,
+    sessionDate: latest.timestamp,
+    promptTitle: prompt?.title || 'Art therapy session',
+    sessionStressScore: latest.stressScore,
+  };
 }

@@ -52,6 +52,31 @@
   color: var(--text-secondary);
 }
 
+.sr-header-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+.sr-header-sub strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.sr-header-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.sr-sep {
+  margin: 0 6px;
+  color: var(--gray-300);
+  font-weight: 400;
+}
+
 .sr-toggle-btn {
   display: flex;
   align-items: center;

@@ -931,7 +931,6 @@
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  margin-top: 4px;
 }
 
 .mc-net-status.connected {
@@ -952,20 +951,50 @@
   flex: 1;
 }
 
-.mc-net-cats {
+.mc-net-meta-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.mc-net-cat {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  background: var(--purple-50);
-  color: var(--purple-600);
+.mc-net-parity {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--emerald-600);
+  background: var(--emerald-50);
+  padding: 2px 8px;
   border-radius: var(--radius-full);
+}
+
+.mc-net-policy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+}
+
+.mc-net-policy-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mc-npi-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.mc-npi-val {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 .mc-net-footer {
@@ -973,13 +1002,13 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 16px;
-  border-top: 1px solid var(--purple-50);
+  border-top: 1px solid var(--gray-100);
 }
 
 .mc-net-stats {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
