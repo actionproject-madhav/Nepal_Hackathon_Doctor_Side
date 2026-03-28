@@ -1,0 +1,286 @@
+.traceguard-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.traceguard-card.verified {
+  border-color: #10b981;
+  background: linear-gradient(to bottom, #ffffff, #f0fdf4);
+}
+
+.traceguard-card.defensible {
+  border-color: #3b82f6;
+  background: linear-gradient(to bottom, #ffffff, #eff6ff);
+}
+
+.traceguard-card.at-risk {
+  border-color: #f59e0b;
+  background: linear-gradient(to bottom, #ffffff, #fffbeb);
+}
+
+.traceguard-card.undefendable {
+  border-color: #ef4444;
+  background: linear-gradient(to bottom, #ffffff, #fef2f2);
+}
+
+.traceguard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.traceguard-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.traceguard-title svg {
+  color: #10b981;
+}
+
+.traceguard-title h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.traceguard-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10b981;
+  background: #d1fae5;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.traceguard-score-section {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 28px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+}
+
+.traceguard-score-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.traceguard-score-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.traceguard-score-bg {
+  stroke: #e5e7eb;
+}
+
+.traceguard-score-fill {
+  stroke: #10b981;
+  stroke-linecap: round;
+  transition: stroke 0.3s;
+}
+
+.verified .traceguard-score-fill {
+  stroke: #10b981;
+}
+
+.defensible .traceguard-score-fill {
+  stroke: #3b82f6;
+}
+
+.at-risk .traceguard-score-fill {
+  stroke: #f59e0b;
+}
+
+.undefendable .traceguard-score-fill {
+  stroke: #ef4444;
+}
+
+.traceguard-score-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.traceguard-score-number {
+  display: block;
+  font-size: 36px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.traceguard-score-label {
+  display: block;
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.traceguard-score-status {
+  flex: 1;
+}
+
+.traceguard-level {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.traceguard-level-verified {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.traceguard-level-defensible {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.traceguard-level-at-risk {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.traceguard-level-undefendable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.traceguard-level-desc {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.traceguard-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.traceguard-analyzing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.traceguard-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.traceguard-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.traceguard-check-pass {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.traceguard-check-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.traceguard-check-fail {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.traceguard-check-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.traceguard-check-pass .traceguard-check-icon {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.traceguard-check-warning .traceguard-check-icon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.traceguard-check-fail .traceguard-check-icon {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.traceguard-check-content {
+  flex: 1;
+}
+
+.traceguard-check-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.traceguard-check-issue {
+  font-size: 13px;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.traceguard-check-note {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.traceguard-check-points {
+  font-weight: 700;
+  font-size: 14px;
+  color: #6b7280;
+  flex-shrink: 0;
+}

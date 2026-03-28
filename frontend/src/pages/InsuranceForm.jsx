@@ -5,7 +5,10 @@ import { MOCK_PATIENTS, getPatientById, getPatientAnalytics } from '../data/mock
 import { findProviderByPatientInsurer, isInNetwork } from '../data/insuranceProviders';
 import { getReplayForPatient, getEmotionColor } from '../data/mockReplay';
 import { exportInsuranceFormPDF } from '../utils/pdfExport';
+import { automatePortalSubmission, simulateEDITransmission } from '../utils/portalAutomation';
+import { draftClaimSubmissionEmail } from '../utils/gmailService';
 import AgentAutomation from '../components/AgentAutomation';
+import TraceGuard from '../components/TraceGuard';
 import './InsuranceForm.css';
 
 const PRECEDENT_DB = [
@@ -102,9 +105,29 @@ export default function InsuranceForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStep('agent_submitting');
+  };
+
+  const handleOpenPortal = async () => {
+    try {
+      await automatePortalSubmission(matchedInsurer?.id || 'united', formData, (step, message) => {
+        console.log(`Step ${step}: ${message}`);
+      });
+    } catch (error) {
+      console.error('Portal automation error:', error);
+      alert(error.message);
+    }
+  };
+
+  const handleDraftEmail = () => {
+    try {
+      draftClaimSubmissionEmail(patient, matchedInsurer, formData.insuranceId);
+    } catch (error) {
+      console.error('Email draft error:', error);
+      alert('Failed to open Gmail. Please ensure popups are allowed.');
+    }
   };
 
   if (!patient) {
@@ -438,8 +461,17 @@ export default function InsuranceForm() {
                 {/* Right Column: Sticky Clinical Sidebar */}
                 <aside className="ins-sidebar-col">
                   <div className="ins-sticky-segment">
+                    {/* TraceGuard */}
+                    <TraceGuard
+                      formData={formData}
+                      patient={patient}
+                      sessions={sessions}
+                      parityViolations={parityViolations}
+                      insurer={matchedInsurer}
+                    />
+
                     {/* Financial Summary */}
-                    <div className="ins-fin-summary card">
+                    <div className="ins-fin-summary card" style={{ marginTop: 20 }}>
                       <h4>Financial Overview</h4>
                       <div className="ins-fin-grid">
                         <div className="ins-fin-item">
@@ -507,7 +539,13 @@ export default function InsuranceForm() {
                       <button className="btn btn-primary btn-block" onClick={handleSubmit}>
                         Submit Claim to {matchedInsurer?.name || patient.insuranceProvider}
                       </button>
-                      <button className="btn btn-outline btn-block" onClick={() => exportInsuranceFormPDF(formData)}>
+                      <button className="btn btn-outline btn-block" onClick={handleOpenPortal} style={{ marginTop: 10 }}>
+                        Open Portal & Fill Form
+                      </button>
+                      <button className="btn btn-outline btn-block" onClick={handleDraftEmail} style={{ marginTop: 10 }}>
+                        Draft Email in Gmail
+                      </button>
+                      <button className="btn btn-outline btn-block" onClick={() => exportInsuranceFormPDF(formData)} style={{ marginTop: 10 }}>
                         Download Form PDF
                       </button>
                     </div>

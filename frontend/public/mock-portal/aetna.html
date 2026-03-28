@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aetna Provider Portal - Pre-Authorization</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    .header {
+      background: #7B2D8E;
+      color: white;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: -0.5px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+      padding: 36px;
+    }
+
+    h1 {
+      color: #7B2D8E;
+      font-size: 26px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .breadcrumb {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      background: #f8f4f9;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #7B2D8E;
+      border-left: 3px solid #7B2D8E;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #444;
+      font-size: 13px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #d0d0d0;
+      border-radius: 3px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #7B2D8E;
+      box-shadow: 0 0 0 2px rgba(123,45,142,0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 75px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      background: #fff4e5;
+      color: #cc7a00;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .btn {
+      padding: 11px 22px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #7B2D8E;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5f2370;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      margin-left: 8px;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px solid #e8e8e8;
+    }
+
+    .required {
+      color: #d32f2f;
+      margin-left: 2px;
+    }
+
+    .helper-text {
+      font-size: 11px;
+      color: #777;
+      margin-top: 3px;
+    }
+
+    .automation-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #7B2D8E;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      display: none;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+
+    .automation-indicator.active {
+      display: block;
+    }
+
+    .info-banner {
+      background: #e8f4fd;
+      border-left: 3px solid #1976d2;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #0d47a1;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="automation-indicator" id="automation-indicator">
+    VoiceCanvas automation active...
+  </div>
+
+  <div class="header">
+    <div class="logo">Aetna</div>
+    <div class="nav">
+      <span>Provider Portal</span>
+      <span>Resources</span>
+      <span>Support</span>
+      <span>Sign Out</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>
+      Pre-Authorization Request
+      <span class="status-badge">IN PROGRESS</span>
+    </h1>
+    <div class="breadcrumb">Dashboard / Authorizations / New Request / Behavioral Health</div>
+
+    <div class="info-banner">
+      This form uses Availity standards. All fields marked with * are required for submission.
+    </div>
+
+    <form id="preauth-form">
+      <!-- Member Information -->
+      <div class="section">
+        <div class="section-title">Member Information</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="patient-name">Member Name <span class="required">*</span></label>
+            <input type="text" id="patient-name" name="patientName" required>
+          </div>
+          <div class="form-group">
+            <label for="dob">Date of Birth <span class="required">*</span></label>
+            <input type="date" id="dob" name="dob" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="member-id">Member ID <span class="required">*</span></label>
+            <input type="text" id="member-id" name="memberId" required>
+            <div class="helper-text">Format: W123456789</div>
+          </div>
+          <div class="form-group">
+            <label for="group-number">Group Number</label>
+            <input type="text" id="group-number" name="groupNumber">
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical Details -->
+      <div class="section">
+        <div class="section-title">Clinical Details</div>
+        <div class="form-group">
+          <label for="chief-complaint">Presenting Problem <span class="required">*</span></label>
+          <textarea id="chief-complaint" name="chiefComplaint" required></textarea>
+          <div class="helper-text">Describe member's primary symptoms and reason for care</div>
+        </div>
+        <div class="form-group">
+          <label for="diagnosis">Primary Diagnosis (ICD-10) <span class="required">*</span></label>
+          <input type="text" id="diagnosis" name="diagnosis" required>
+          <div class="helper-text">Enter diagnosis code (e.g., F41.1)</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="symptom-duration">Duration of Symptoms <span class="required">*</span></label>
+            <input type="text" id="symptom-duration" name="symptomDuration" required>
+          </div>
+          <div class="form-group">
+            <label for="service-type">Service Requested <span class="required">*</span></label>
+            <select id="service-type" name="serviceType" required>
+              <option value="">-- Select Service --</option>
+              <option value="outpatient-therapy">Outpatient Psychotherapy (90837)</option>
+              <option value="psychiatric-eval">Psychiatric Diagnostic Evaluation (96130)</option>
+              <option value="both">Combined Services</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="functional-impairment">Functional Impairment <span class="required">*</span></label>
+          <textarea id="functional-impairment" name="functionalImpairment" required></textarea>
+          <div class="helper-text">Impact on work, social, or daily activities</div>
+        </div>
+      </div>
+
+      <!-- Rendering Provider -->
+      <div class="section">
+        <div class="section-title">Rendering Provider</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="provider-name">Provider Name <span class="required">*</span></label>
+            <input type="text" id="provider-name" name="providerName" required>
+          </div>
+          <div class="form-group">
+            <label for="provider-npi">NPI Number <span class="required">*</span></label>
+            <input type="text" id="provider-npi" name="providerNpi" required>
+            <div class="helper-text">10-digit National Provider Identifier</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Documentation -->
+      <div class="section">
+        <div class="section-title">Supporting Clinical Documentation</div>
+        <div class="form-group">
+          <label for="clinical-notes">Additional Notes</label>
+          <textarea id="clinical-notes" name="clinicalNotes"></textarea>
+          <div class="helper-text">Optional: Supplementary clinical observations</div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button type="button" class="btn btn-secondary">Save Draft</button>
+        <button type="submit" class="btn btn-primary">Submit for Review</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Listen for automation messages
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'FILL_FORM') {
+        const data = event.data.formData;
+        const indicator = document.getElementById('automation-indicator');
+        indicator.classList.add('active');
+
+        const fields = [
+          { id: 'patient-name', value: data.patientName, delay: 500 },
+          { id: 'dob', value: data.dob, delay: 1000 },
+          { id: 'member-id', value: data.insuranceId, delay: 500 },
+          { id: 'group-number', value: data.groupNumber, delay: 500 },
+          { id: 'chief-complaint', value: data.chiefComplaint, delay: 800 },
+          { id: 'diagnosis', value: data.diagnosisCategory, delay: 500 },
+          { id: 'symptom-duration', value: data.symptomDuration, delay: 500 },
+          { id: 'service-type', value: data.requestedService === 'both' ? 'both' : 'outpatient-therapy', delay: 500 },
+          { id: 'functional-impairment', value: data.functionalImpairment, delay: 800 },
+          { id: 'provider-name', value: data.providerName, delay: 500 },
+          { id: 'provider-npi', value: data.providerNPI, delay: 500 },
+        ];
+
+        let totalDelay = 0;
+        fields.forEach(field => {
+          setTimeout(() => {
+            const element = document.getElementById(field.id);
+            if (element && field.value) {
+              let currentValue = '';
+              const chars = field.value.split('');
+              chars.forEach((char, i) => {
+                setTimeout(() => {
+                  currentValue += char;
+                  element.value = currentValue;
+                  element.focus();
+                  element.dispatchEvent(new Event('input', { bubbles: true }));
+                }, i * 20);
+              });
+            }
+          }, totalDelay);
+          totalDelay += field.delay + (field.value?.length || 0) * 20;
+        });
+
+        setTimeout(() => {
+          indicator.classList.remove('active');
+        }, totalDelay + 1000);
+      }
+    });
+
+    document.getElementById('preauth-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Authorization submitted to Aetna!\n\nReference: AUTH-' + Math.random().toString(36).substring(2, 10).toUpperCase());
+    });
+  </script>
+</body>
+</html>

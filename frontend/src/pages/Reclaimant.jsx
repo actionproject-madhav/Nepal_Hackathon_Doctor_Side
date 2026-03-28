@@ -6,6 +6,7 @@ import { findProviderById } from '../data/insuranceProviders';
 import { getRelevantPrecedents } from '../data/precedentDB';
 import { scanForParityViolations, calculateWinProbability, classifyDenialReason } from '../utils/parityEngine';
 import { generateAppealLetter } from '../utils/appealGenerator';
+import { draftGmailAppeal } from '../utils/gmailService';
 import AgentAutomation from '../components/AgentAutomation';
 import './Reclaimant.css';
 
@@ -101,6 +102,15 @@ export default function Reclaimant() {
   const handleSubmitAppeal = () => {
     setAgentSubmitting(true);
     setActiveStep(4);
+  };
+
+  const handleDraftEmailAppeal = () => {
+    try {
+      draftGmailAppeal(appealText, insurer, formData);
+    } catch (error) {
+      console.error('Email draft error:', error);
+      alert('Failed to open Gmail. Please ensure popups are allowed.');
+    }
   };
 
   const finalizeAppealSubmit = async () => {
@@ -279,7 +289,8 @@ export default function Reclaimant() {
                     {!appealSubmitted && (
                       <div className="recl-appeal-actions">
                         <button className="ins-btn-secondary" onClick={handleGenerateAppeal}>Regenerate</button>
-                        <button className="ins-btn-submit" onClick={handleSubmitAppeal}>Submit Appeal to {insurer?.name || 'Insurer'}</button>
+                        <button className="ins-btn-secondary" onClick={handleDraftEmailAppeal} style={{ marginLeft: 10 }}>Draft in Gmail</button>
+                        <button className="ins-btn-submit" onClick={handleSubmitAppeal} style={{ marginLeft: 10 }}>Submit Appeal to {insurer?.name || 'Insurer'}</button>
                       </div>
                     )}
                   </div>

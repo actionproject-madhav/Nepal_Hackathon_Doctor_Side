@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnitedHealthcare Provider Portal - Pre-Authorization</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+    }
+
+    .header {
+      background: #002677;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .nav {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 40px;
+    }
+
+    h1 {
+      color: #002677;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .breadcrumb {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      background: #f0f4f8;
+      padding: 12px 16px;
+      font-weight: 600;
+      color: #002677;
+      border-left: 4px solid #002677;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #002677;
+      box-shadow: 0 0 0 3px rgba(0,38,119,0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #fff3cd;
+      color: #856404;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #002677;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #001a52;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      margin-left: 10px;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e9ecef;
+    }
+
+    .required {
+      color: #dc3545;
+      margin-left: 2px;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .automation-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: none;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .automation-indicator.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="automation-indicator" id="automation-indicator">
+    Automation in progress...
+  </div>
+
+  <div class="header">
+    <div class="logo">UnitedHealthcare</div>
+    <div class="nav">
+      <span>Provider Portal</span>
+      <span>Help</span>
+      <span>Logout</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>
+      Pre-Authorization Request
+      <span class="status-badge">DRAFT</span>
+    </h1>
+    <div class="breadcrumb">Home / Pre-Authorization / New Request / Mental Health Services</div>
+
+    <form id="preauth-form">
+      <!-- Patient Information -->
+      <div class="section">
+        <div class="section-title">Patient Information</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="patient-name">Patient Name <span class="required">*</span></label>
+            <input type="text" id="patient-name" name="patientName" required>
+          </div>
+          <div class="form-group">
+            <label for="dob">Date of Birth <span class="required">*</span></label>
+            <input type="date" id="dob" name="dob" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="member-id">Member ID <span class="required">*</span></label>
+            <input type="text" id="member-id" name="memberId" required>
+          </div>
+          <div class="form-group">
+            <label for="group-number">Group Number</label>
+            <input type="text" id="group-number" name="groupNumber">
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical Information -->
+      <div class="section">
+        <div class="section-title">Clinical Information</div>
+        <div class="form-group">
+          <label for="chief-complaint">Chief Complaint <span class="required">*</span></label>
+          <textarea id="chief-complaint" name="chiefComplaint" required></textarea>
+          <div class="helper-text">Primary reason for seeking mental health services</div>
+        </div>
+        <div class="form-group">
+          <label for="diagnosis">Diagnosis (ICD-10) <span class="required">*</span></label>
+          <input type="text" id="diagnosis" name="diagnosis" required>
+          <div class="helper-text">Enter ICD-10 code (e.g., F32.9, F41.1)</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="symptom-duration">Symptom Duration <span class="required">*</span></label>
+            <input type="text" id="symptom-duration" name="symptomDuration" required>
+          </div>
+          <div class="form-group">
+            <label for="service-type">Requested Service Type <span class="required">*</span></label>
+            <select id="service-type" name="serviceType" required>
+              <option value="">Select service type...</option>
+              <option value="outpatient-therapy">Outpatient Therapy (90837)</option>
+              <option value="psychiatric-eval">Psychiatric Evaluation (96130)</option>
+              <option value="both">Both Services</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="functional-impairment">Functional Impairment <span class="required">*</span></label>
+          <textarea id="functional-impairment" name="functionalImpairment" required></textarea>
+          <div class="helper-text">Describe how symptoms impact daily functioning</div>
+        </div>
+      </div>
+
+      <!-- Provider Information -->
+      <div class="section">
+        <div class="section-title">Provider Information</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="provider-name">Treating Provider <span class="required">*</span></label>
+            <input type="text" id="provider-name" name="providerName" required>
+          </div>
+          <div class="form-group">
+            <label for="provider-npi">Provider NPI <span class="required">*</span></label>
+            <input type="text" id="provider-npi" name="providerNpi" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supporting Documentation -->
+      <div class="section">
+        <div class="section-title">Supporting Documentation</div>
+        <div class="form-group">
+          <label for="clinical-notes">Clinical Notes</label>
+          <textarea id="clinical-notes" name="clinicalNotes"></textarea>
+          <div class="helper-text">Optional: Additional clinical documentation</div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button type="button" class="btn btn-secondary">Save as Draft</button>
+        <button type="submit" class="btn btn-primary">Submit Pre-Authorization</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Listen for messages from parent window (for automation)
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'FILL_FORM') {
+        const data = event.data.formData;
+        const indicator = document.getElementById('automation-indicator');
+        indicator.classList.add('active');
+
+        // Simulate typing delay for each field
+        const fields = [
+          { id: 'patient-name', value: data.patientName, delay: 500 },
+          { id: 'dob', value: data.dob, delay: 1000 },
+          { id: 'member-id', value: data.insuranceId, delay: 500 },
+          { id: 'group-number', value: data.groupNumber, delay: 500 },
+          { id: 'chief-complaint', value: data.chiefComplaint, delay: 800 },
+          { id: 'diagnosis', value: data.diagnosisCategory, delay: 500 },
+          { id: 'symptom-duration', value: data.symptomDuration, delay: 500 },
+          { id: 'service-type', value: data.requestedService === 'both' ? 'both' : 'outpatient-therapy', delay: 500 },
+          { id: 'functional-impairment', value: data.functionalImpairment, delay: 800 },
+          { id: 'provider-name', value: data.providerName, delay: 500 },
+          { id: 'provider-npi', value: data.providerNPI, delay: 500 },
+        ];
+
+        let totalDelay = 0;
+        fields.forEach(field => {
+          setTimeout(() => {
+            const element = document.getElementById(field.id);
+            if (element && field.value) {
+              // Simulate typing
+              let currentValue = '';
+              const chars = field.value.split('');
+              chars.forEach((char, i) => {
+                setTimeout(() => {
+                  currentValue += char;
+                  element.value = currentValue;
+                  element.focus();
+                  // Trigger input event for any listeners
+                  element.dispatchEvent(new Event('input', { bubbles: true }));
+                }, i * 20);
+              });
+            }
+          }, totalDelay);
+          totalDelay += field.delay + (field.value?.length || 0) * 20;
+        });
+
+        // Hide indicator when done
+        setTimeout(() => {
+          indicator.classList.remove('active');
+        }, totalDelay + 1000);
+      }
+    });
+
+    document.getElementById('preauth-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Pre-authorization submitted successfully!\n\nTracking ID: PA-' + Math.random().toString(36).substring(2, 10).toUpperCase());
+    });
+  </script>
+</body>
+</html>
