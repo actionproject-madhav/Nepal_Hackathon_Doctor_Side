@@ -86,6 +86,10 @@ export default function InsuranceForm() {
     ? analytics.reduce((a, b) => a + (b.stressScore || 0), 0) / analytics.length
     : 0;
 
+  const estimatedCost = formData.requestedService === 'both' ? 4800 : 2400;
+  const planPays = Math.round(estimatedCost * 0.7);
+  const patientOwes = estimatedCost - planPays;
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -95,241 +99,336 @@ export default function InsuranceForm() {
     setStep('submitted');
   };
 
-  const handleSimulateDenial = () => {
-    setStep('denied');
-  };
-
-  const fields = [
-    {
-      section: 'Clinical Information',
-      desc: patient ? `Auto-populated from ${patient.name}'s ${sessions.length} sessions` : 'Auto-populated from AI drawing analysis',
-      fields: [
-        { key: 'chiefComplaint', label: 'Chief Complaint', type: 'textarea' },
-        { key: 'symptomDuration', label: 'Symptom Duration', type: 'text' },
-        { key: 'functionalImpairment', label: 'Functional Impairment', type: 'textarea' },
-        { key: 'diagnosisCategory', label: 'Diagnosis Category', type: 'text' },
-        { key: 'requestedService', label: 'Requested Service', type: 'select', options: ['therapy', 'psychiatric eval', 'both'] },
-      ],
-    },
-    {
-      section: 'Patient Information',
-      desc: 'Required for claim submission',
-      fields: [
-        { key: 'patientName', label: 'Patient Name', type: 'text' },
-        { key: 'dob', label: 'Date of Birth', type: 'date' },
-        { key: 'insuranceId', label: 'Insurance ID / Member Number', type: 'text' },
-        { key: 'groupNumber', label: 'Group Number', type: 'text' },
-      ],
-    },
-    {
-      section: 'Provider Information',
-      desc: 'Treating clinician details',
-      fields: [
-        { key: 'providerName', label: 'Provider Name', type: 'text' },
-        { key: 'providerNPI', label: 'NPI Number', type: 'text' },
-      ],
-    },
-  ];
-
   return (
-    <div className="insurance-page">
-      <header className="ins-header">
-        <div className="container">
-          <div className="ins-header-inner">
-            <button className="btn btn-sm btn-ghost" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
-              ← {patient ? patient.name : 'Dashboard'}
-            </button>
-            <div className="ins-brand">
-              <span className="ins-brand-text">VoiceCanvas Clinic</span>
-            </div>
-          </div>
+    <div className="ins-page">
+      {/* Top Nav */}
+      <header className="ins-topnav">
+        <button className="ins-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <nav className="ins-nav-pills">
+          <button className="ins-nav-pill" onClick={() => navigate('/dashboard')}>Dashboard</button>
+          <button className="ins-nav-pill ins-nav-active">Claims</button>
+          <button className="ins-nav-pill">Documents</button>
+        </nav>
+        <div className="ins-topnav-right">
+          <div className="ins-user-avatar">Dr</div>
         </div>
       </header>
 
-      <div className="container-narrow ins-main">
-        <motion.div className="ins-title" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1>Insurance Claim + Reclaimant Engine</h1>
-          <p>AI-powered parity violation detection, precedent matching, and auto-appeal generation.</p>
-
-          <div className="ins-stats">
-            <div className="ins-stat-pill">
-              <span className="isp-val">$35,000</span>
-              <span className="isp-label">Avg. annual recovery</span>
-            </div>
-            <div className="ins-stat-pill">
-              <span className="isp-val">{avgWinRate}%</span>
-              <span className="isp-label">Appeal win rate</span>
-            </div>
-            <div className="ins-stat-pill">
-              <span className="isp-val">2x</span>
-              <span className="isp-label">MH denial rate vs medical</span>
-            </div>
-          </div>
-
-          {patient && (
-            <div className="ins-autofill-badge">
-              <span className="afb-dot" />
-              Clinical data auto-filled from {patient.name}'s {sessions.length} VoiceCanvas sessions ({patient.insuranceProvider})
-            </div>
-          )}
-        </motion.div>
-
+      <div className="ins-content">
         <AnimatePresence mode="wait">
           {step === 'form' && (
-            <motion.form key="form" className="ins-form" onSubmit={handleSubmit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -30 }}>
-              {fields.map((section, si) => (
-                <motion.div key={section.section} className="ins-section card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: si * 0.1 + 0.2 }}>
-                  <div className="ins-section-header">
-                    <div>
-                      <h3>{section.section}</h3>
-                      <p>{section.desc}</p>
-                    </div>
-                  </div>
-                  <div className="ins-fields">
-                    {section.fields.map(field => (
-                      <div key={field.key} className="form-group">
-                        <label className="form-label" htmlFor={field.key}>{field.label}</label>
-                        {field.type === 'textarea' ? (
-                          <textarea className="form-textarea" id={field.key} value={formData[field.key]} onChange={(e) => handleChange(field.key, e.target.value)} rows={3} />
-                        ) : field.type === 'select' ? (
-                          <select className="form-select" id={field.key} value={formData[field.key]} onChange={(e) => handleChange(field.key, e.target.value)}>
-                            {field.options.map(o => (<option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>))}
-                          </select>
-                        ) : (
-                          <input className="form-input" type={field.type} id={field.key} value={formData[field.key]} onChange={(e) => handleChange(field.key, e.target.value)} />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-
-              <motion.div className="ins-parity card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                <div className="parity-header-row">
-                  <h3>Parity Guard Analysis</h3>
-                  <span className="parity-shield-badge">AI PROTECTED</span>
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {/* Claim Header */}
+              <div className="ins-claim-header">
+                <div className="ins-claim-title">
+                  <h1>Mental Health<br /><span>Insurance Claim</span></h1>
                 </div>
-                {parityViolations.length > 0 ? (
-                  <>
-                    <div className="parity-alert">
-                      <strong>{parityViolations.length} Potential Parity Violation{parityViolations.length > 1 ? 's' : ''} Detected</strong>
-                      <p>Our AI has flagged elements that may violate the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
+                <div className="ins-claim-meta">
+                  {patient && (
+                    <div className="ins-meta-patient">
+                      <div className="ins-meta-avatar">{patient.avatar}</div>
+                      <div>
+                        <span className="ins-meta-name">{patient.name}</span>
+                        <span className="ins-meta-email">{patient.insuranceProvider}</span>
+                      </div>
                     </div>
-                    <div className="parity-violations">
-                      {parityViolations.map((v, i) => (
-                        <div key={i} className={`parity-violation pv-${v.severity}`}>
-                          <span className="pv-type">{v.type}</span>
-                          <p>{v.desc}</p>
-                          <code className="pv-code">{v.code}</code>
+                  )}
+                  <div className="ins-meta-pills">
+                    <div className="ins-meta-pill">
+                      <span className="imp-label">Date of service</span>
+                      <span className="imp-value">{new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}</span>
+                    </div>
+                    <div className="ins-meta-pill">
+                      <span className="imp-label">Claim ID</span>
+                      <span className="imp-value">{formData.insuranceId || 'PENDING'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Overview */}
+              <div className="ins-financial-row">
+                <div className="ins-fin-card">
+                  <span className="ins-fin-label">Plan pays</span>
+                  <span className="ins-fin-amount">${(planPays / 1000).toFixed(0)}k</span>
+                  <div className="ins-fin-bar">
+                    <div className="ins-fin-bar-fill ins-fin-fill-green" style={{ width: '70%' }} />
+                  </div>
+                </div>
+                <div className="ins-fin-card">
+                  <span className="ins-fin-label">Patient responsibility</span>
+                  <span className="ins-fin-amount">${(patientOwes / 1000).toFixed(1)}k</span>
+                  <div className="ins-fin-bar">
+                    <div className="ins-fin-bar-fill ins-fin-fill-gray" style={{ width: '30%' }} />
+                  </div>
+                </div>
+                <div className="ins-fin-card">
+                  <span className="ins-fin-label">Estimated total</span>
+                  <span className="ins-fin-amount ins-fin-amount-lg">${(estimatedCost / 1000).toFixed(1)}k</span>
+                </div>
+                <div className="ins-fin-card ins-fin-card-accent">
+                  <span className="ins-fin-label-dark">Appeal recovery</span>
+                  <span className="ins-fin-amount-accent">${(estimatedCost * 0.6 / 1000).toFixed(1)}k</span>
+                  <span className="ins-fin-subtext">{avgWinRate}% win rate</span>
+                </div>
+              </div>
+
+              {/* Two Column: Form + Parity */}
+              <div className="ins-two-col">
+                {/* Left: Form */}
+                <form className="ins-form-col" onSubmit={handleSubmit}>
+                  <div className="ins-form-section">
+                    <h3>Clinical Information</h3>
+                    <p className="ins-form-hint">
+                      {patient ? `Auto-filled from ${patient.name}'s ${sessions.length} sessions` : 'Enter clinical details'}
+                    </p>
+                    <div className="ins-form-grid">
+                      <div className="ins-fg">
+                        <label>Chief Complaint</label>
+                        <textarea value={formData.chiefComplaint} onChange={e => handleChange('chiefComplaint', e.target.value)} rows={2} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Symptom Duration</label>
+                        <input type="text" value={formData.symptomDuration} onChange={e => handleChange('symptomDuration', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Functional Impairment</label>
+                        <textarea value={formData.functionalImpairment} onChange={e => handleChange('functionalImpairment', e.target.value)} rows={2} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Diagnosis</label>
+                        <input type="text" value={formData.diagnosisCategory} onChange={e => handleChange('diagnosisCategory', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Requested Service</label>
+                        <select value={formData.requestedService} onChange={e => handleChange('requestedService', e.target.value)}>
+                          <option value="therapy">Therapy</option>
+                          <option value="psychiatric eval">Psychiatric Eval</option>
+                          <option value="both">Both</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ins-form-section">
+                    <h3>Patient & Provider</h3>
+                    <div className="ins-form-grid ins-fg-2col">
+                      <div className="ins-fg">
+                        <label>Patient Name</label>
+                        <input type="text" value={formData.patientName} onChange={e => handleChange('patientName', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Date of Birth</label>
+                        <input type="date" value={formData.dob} onChange={e => handleChange('dob', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Insurance ID</label>
+                        <input type="text" value={formData.insuranceId} onChange={e => handleChange('insuranceId', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Group Number</label>
+                        <input type="text" value={formData.groupNumber} onChange={e => handleChange('groupNumber', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>Provider Name</label>
+                        <input type="text" value={formData.providerName} onChange={e => handleChange('providerName', e.target.value)} />
+                      </div>
+                      <div className="ins-fg">
+                        <label>NPI Number</label>
+                        <input type="text" value={formData.providerNPI} onChange={e => handleChange('providerNPI', e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ins-form-actions">
+                    <button type="submit" className="ins-btn-submit">Submit Pre-Authorization</button>
+                    <button type="button" className="ins-btn-secondary" onClick={() => exportInsuranceFormPDF(formData)}>Download PDF</button>
+                  </div>
+                </form>
+
+                {/* Right: Parity + Precedents */}
+                <div className="ins-parity-col">
+                  <div className="ins-parity-card">
+                    <div className="ins-parity-header">
+                      <h3>Parity Guard</h3>
+                      <span className="ins-parity-badge">AI PROTECTED</span>
+                    </div>
+
+                    {parityViolations.length > 0 ? (
+                      <>
+                        <div className="ins-parity-alert">
+                          <span className="ins-pa-count">{parityViolations.length}</span>
+                          <div>
+                            <strong>Parity Violation{parityViolations.length > 1 ? 's' : ''} Detected</strong>
+                            <p>MHPAEA compliance issues found</p>
+                          </div>
+                        </div>
+                        <div className="ins-violations">
+                          {parityViolations.map((v, i) => (
+                            <div key={i} className={`ins-violation ins-v-${v.severity}`}>
+                              <span className="ins-v-type">{v.type}</span>
+                              <p>{v.desc}</p>
+                              <code>{v.code}</code>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="ins-parity-clear">No parity violations detected. Coverage probability is high.</p>
+                    )}
+                  </div>
+
+                  <div className="ins-precedent-card">
+                    <h3>Legal Precedents</h3>
+                    <div className="ins-prec-list">
+                      {matchedPrecedents.map((p, i) => (
+                        <div key={i} className="ins-prec-item">
+                          <div className="ins-prec-top">
+                            <span className="ins-prec-case">{p.case}</span>
+                            <span className={`ins-prec-outcome ${p.outcome === 'Patient won' ? 'ins-po-won' : 'ins-po-settled'}`}>{p.outcome}</span>
+                          </div>
+                          <p className="ins-prec-rel">{p.relevance}</p>
+                          <div className="ins-prec-bar-track">
+                            <div className="ins-prec-bar-fill" style={{ width: `${p.winRate}%` }} />
+                          </div>
+                          <span className="ins-prec-rate">{p.winRate}% win rate</span>
                         </div>
                       ))}
                     </div>
-                  </>
-                ) : (
-                  <p className="parity-clear">No immediate parity violations detected. Coverage probability is high.</p>
-                )}
-              </motion.div>
+                  </div>
 
-              <div className="ins-form-actions">
-                <button type="submit" className="btn btn-primary btn-lg">Submit Pre-Authorization</button>
-                <button type="button" className="btn btn-secondary" onClick={() => exportInsuranceFormPDF(formData)}>Download as PDF</button>
+                  <div className="ins-sessions-card">
+                    <h3>Evidence: {sessions.length} Sessions</h3>
+                    <div className="ins-evidence-stats">
+                      <div className="ins-ev-stat">
+                        <span className="ins-ev-val">{avgStress.toFixed(1)}</span>
+                        <span className="ins-ev-label">Avg Stress</span>
+                      </div>
+                      <div className="ins-ev-stat">
+                        <span className="ins-ev-val">{analytics.filter(a => a.thresholdMet).length}</span>
+                        <span className="ins-ev-label">Threshold Met</span>
+                      </div>
+                      <div className="ins-ev-stat">
+                        <span className="ins-ev-val">{sessions.filter(s => s.result.crisis_flag).length}</span>
+                        <span className="ins-ev-label">Crisis Flags</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </motion.form>
+            </motion.div>
           )}
 
           {step === 'submitted' && (
-            <motion.div key="submitted" className="ins-result card" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-              <h2>Pre-Authorization Submitted</h2>
-              <p>In production, this would be sent to {patient?.insuranceProvider || 'the insurance provider'} via secure API.</p>
-              <div className="ins-sim-denial">
-                <h4>Want to see the Reclaimant auto-appeal in action?</h4>
-                <p>Simulate a denial to watch the AI generate a legal appeal with precedent matching.</p>
-                <button className="btn btn-danger" onClick={handleSimulateDenial}>Simulate Insurance Denial</button>
-              </div>
-              <div className="ins-result-nav">
-                <button className="btn btn-primary" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
-                  ← {patient ? `${patient.name}'s Profile` : 'Dashboard'}
+            <motion.div key="submitted" className="ins-submitted" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+              <div className="ins-submitted-card">
+                <div className="ins-check-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h2>Pre-Authorization Submitted</h2>
+                <p>Sent to {patient?.insuranceProvider || 'insurer'} for review. Expected response in 5-10 business days.</p>
+
+                <div className="ins-submitted-amount">
+                  <span className="ins-sa-label">Estimated coverage</span>
+                  <span className="ins-sa-val">${estimatedCost.toLocaleString()}</span>
+                </div>
+
+                <div className="ins-denial-sim">
+                  <h4>Test the Reclaimant Engine</h4>
+                  <p>Simulate a denial to see AI-powered auto-appeal generation with precedent matching.</p>
+                  <button className="ins-btn-deny" onClick={() => setStep('denied')}>Simulate Denial</button>
+                </div>
+
+                <button className="ins-btn-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
+                  Back to {patient ? patient.name : 'Dashboard'}
                 </button>
               </div>
             </motion.div>
           )}
 
           {step === 'denied' && (
-            <motion.div key="denied" className="ins-denied" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="denial-notice card">
+            <motion.div key="denied" className="ins-denied-view" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="ins-denial-banner">
                 <h2>Claim Denied</h2>
-                <p className="denial-reason">"Insufficient medical necessity documentation for requested mental health services."</p>
-                <span className="badge badge-red">Denial Code: MN-4021</span>
+                <p>"Insufficient medical necessity documentation for requested mental health services."</p>
+                <span className="ins-denial-code">Denial Code: MN-4021</span>
               </div>
 
-              <motion.div className="reclaimant-card card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <div className="recl-header">
-                  <h3>Reclaimant Auto-Appeal Engine</h3>
-                  <span className="badge badge-blue">AI-Powered</span>
+              <div className="ins-reclaimant">
+                <div className="ins-recl-header">
+                  <h3>Reclaimant Auto-Appeal</h3>
+                  <span className="ins-recl-badge">AI-Powered</span>
                 </div>
-                <div className="recl-steps">
-                  <div className="recl-step recl-done">
-                    <span className="recl-step-num">1</span>
+
+                <div className="ins-recl-steps">
+                  <div className="ins-recl-step ins-rs-done">
+                    <span className="ins-rs-num">1</span>
                     <div>
                       <strong>Denial NLP Scan</strong>
-                      <p>Parsed denial text — triggered parity violation check {patient?.isNonverbal ? '(nonverbal patient = protected class)' : ''}</p>
+                      <p>Parsed denial text. Parity violation check triggered{patient?.isNonverbal ? ' (nonverbal = protected class)' : ''}.</p>
                     </div>
                   </div>
-                  <div className="recl-step recl-done">
-                    <span className="recl-step-num">2</span>
+
+                  <div className="ins-recl-step ins-rs-done">
+                    <span className="ins-rs-num">2</span>
                     <div>
-                      <strong>Precedent Database Match</strong>
-                      <p>Queried 15-year litigation database — {matchedPrecedents.length} matching cases found</p>
-                      <div className="recl-precedents">
+                      <strong>Precedent Match</strong>
+                      <p>{matchedPrecedents.length} cases found from 15-year litigation database.</p>
+                      <div className="ins-recl-cases">
                         {matchedPrecedents.map((p, i) => (
-                          <div key={i} className="recl-precedent">
-                            <span className="rp-case">{p.case}</span>
-                            <span className={`badge ${p.outcome === 'Patient won' ? 'badge-green' : 'badge-yellow'}`}>{p.outcome}</span>
-                            <span className="rp-rel">{p.relevance}</span>
+                          <div key={i} className="ins-recl-case">
+                            <span>{p.case}</span>
+                            <span className={`ins-rc-badge ${p.outcome === 'Patient won' ? 'ins-rc-won' : 'ins-rc-settled'}`}>{p.outcome}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-                  <div className={`recl-step ${appealGenerated ? 'recl-done' : 'recl-pending'}`}>
-                    <span className="recl-step-num">3</span>
+
+                  <div className={`ins-recl-step ${appealGenerated ? 'ins-rs-done' : 'ins-rs-pending'}`}>
+                    <span className="ins-rs-num">3</span>
                     <div>
-                      <strong>Generate Legal Appeal Letter</strong>
+                      <strong>Generate Appeal Letter</strong>
                       {!appealGenerated ? (
-                        <button className="btn btn-primary btn-sm" onClick={() => setAppealGenerated(true)} style={{ marginTop: 8 }}>Generate Appeal</button>
+                        <button className="ins-btn-generate" onClick={() => setAppealGenerated(true)}>Generate Appeal</button>
                       ) : (
-                        <motion.div className="appeal-letter" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                          <p><strong>To:</strong> {patient?.insuranceProvider || 'Insurance'} Compliance Officer & Medical Director</p>
-                          <p><strong>Subject:</strong> Formal Appeal — MHPAEA Violations — Claim #{formData.insuranceId || 'PENDING'}</p>
-                          <p><strong>Re:</strong> {formData.patientName || 'Patient'}, Denial Code MN-4021</p>
+                        <motion.div className="ins-appeal-letter" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                          <p><strong>To:</strong> {patient?.insuranceProvider || 'Insurance'} Compliance Officer</p>
+                          <p><strong>Re:</strong> {formData.patientName || 'Patient'} — Denial Code MN-4021</p>
                           <hr />
-                          <p>This appeal is submitted using the Reclaimant Legal Precedent Database (15+ years of litigation history). Our analysis detects direct violations of the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
-                          <p><strong>Exhibit A:</strong> {sessions.length} AI-analyzed art therapy drawings with clinical stress scores averaging {avgStress.toFixed(1)}/10.{analytics.filter(a => a.thresholdMet).length > 0 && ` Clinical threshold met in ${analytics.filter(a => a.thresholdMet).length} sessions.`}</p>
-                          <p><strong>Clinical:</strong> {formData.diagnosisCategory || 'Anxiety indicators'} documented across {sessions.length} sessions. Functional impairment: {formData.functionalImpairment || 'As documented'}.</p>
-                          <p><strong>Legal:</strong> Parity Act violations per {parityViolations.map(v => v.code).join(', ') || 'MHPAEA § 712'}. Precedent: {matchedPrecedents.map(p => p.case).join('; ') || 'Multiple matching cases'}.</p>
-                          <p><strong>Demand:</strong> Approve requested services within 30 days per regulatory requirements.</p>
-                          <p className="appeal-footer">Win probability: <strong>{avgWinRate}%</strong> based on matched precedents.</p>
+                          <p>This appeal cites direct violations of the Mental Health Parity and Addiction Equity Act (MHPAEA).</p>
+                          <p><strong>Evidence:</strong> {sessions.length} AI-analyzed art therapy sessions. Average stress: {avgStress.toFixed(1)}/10. Clinical threshold met in {analytics.filter(a => a.thresholdMet).length} sessions.</p>
+                          <p><strong>Legal basis:</strong> {parityViolations.map(v => v.code).join(', ') || 'MHPAEA § 712'}. Precedent: {matchedPrecedents.map(p => p.case).join('; ')}.</p>
+                          <p><strong>Demand:</strong> Approve requested services within 30 days.</p>
+                          <div className="ins-appeal-footer">
+                            Win probability: <strong>{avgWinRate}%</strong>
+                          </div>
                         </motion.div>
                       )}
                     </div>
                   </div>
+
                   {appealGenerated && (
-                    <div className={`recl-step ${appealSubmitted ? 'recl-done' : 'recl-pending'}`}>
-                      <span className="recl-step-num">4</span>
+                    <div className={`ins-recl-step ${appealSubmitted ? 'ins-rs-done' : 'ins-rs-pending'}`}>
+                      <span className="ins-rs-num">4</span>
                       <div>
                         <strong>Submit Appeal</strong>
                         {!appealSubmitted ? (
-                          <button className="btn btn-primary btn-sm" onClick={() => setAppealSubmitted(true)} style={{ marginTop: 8 }}>Submit Appeal</button>
+                          <button className="ins-btn-generate" onClick={() => setAppealSubmitted(true)}>Submit to {patient?.insuranceProvider || 'Insurer'}</button>
                         ) : (
-                          <motion.div className="appeal-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <p>Appeal submitted to {patient?.insuranceProvider || 'insurer'}. Expected response within 30-45 days.</p>
-                            <p>Estimated recovery: <strong>${formData.requestedService === 'both' ? '1,200' : '720'}</strong></p>
-                            <div className="appeal-tracker">
-                              <span className="badge badge-green">Submitted</span>
-                              <span className="at-line" />
-                              <span className="badge badge-yellow">Under Review</span>
-                              <span className="at-line" />
-                              <span className="badge badge-blue">Pending</span>
+                          <motion.div className="ins-appeal-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <p>Appeal submitted. Response expected within 30-45 days.</p>
+                            <div className="ins-appeal-amount">
+                              Estimated recovery: <strong>${formData.requestedService === 'both' ? '1,200' : '720'}</strong>
+                            </div>
+                            <div className="ins-appeal-tracker">
+                              <div className="ins-at-step ins-at-active">Submitted</div>
+                              <div className="ins-at-line" />
+                              <div className="ins-at-step">Under Review</div>
+                              <div className="ins-at-line" />
+                              <div className="ins-at-step">Pending</div>
                             </div>
                           </motion.div>
                         )}
@@ -337,16 +436,16 @@ export default function InsuranceForm() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
 
-              <button className="btn btn-ghost" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')} style={{ marginTop: 16 }}>
-                ← Back to {patient ? patient.name : 'Dashboard'}
+              <button className="ins-btn-back" onClick={() => patient ? navigate(`/dashboard/${patient.id}`) : navigate('/dashboard')}>
+                Back to {patient ? patient.name : 'Dashboard'}
               </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <p className="ins-disclaimer">DEMO ONLY — No real insurance submission occurs. Not HIPAA compliant.</p>
+        <p className="ins-disclaimer">DEMO ONLY — No real insurance submission. Not HIPAA compliant.</p>
       </div>
     </div>
   );

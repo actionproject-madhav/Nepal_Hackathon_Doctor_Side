@@ -628,9 +628,9 @@
   margin: 4px 0;
 }
 
-.rp-risk-high { background: linear-gradient(135deg, #22C55E, #16A34A); }
-.rp-risk-moderate { background: linear-gradient(135deg, #F59E0B, #D97706); }
-.rp-risk-low { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.rp-risk-high { background: var(--green-600); }
+.rp-risk-moderate { background: var(--amber-500); }
+.rp-risk-low { background: var(--blue-500); }
 
 .rp-patient-card {
   display: flex;
