@@ -462,6 +462,6 @@ MIT License — See [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 💬 Support
+##  Support
 
 For questions, issues, or contributions, please open an issue on GitHub or contact the development team.
