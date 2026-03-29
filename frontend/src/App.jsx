@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import ClinicLanding from './pages/ClinicLanding';
 import ClinicianDashboard from './pages/ClinicianDashboard';
 import PatientDetail from './pages/PatientDetail';
 import InsuranceForm from './pages/InsuranceForm';
@@ -22,7 +21,7 @@ function AnimatedRoutes() {
         transition={{ duration: 0.2 }}
       >
         <Routes location={location}>
-          <Route path="/" element={<ClinicLanding />} />
+          <Route path="/" element={<ClinicianDashboard />} />
           <Route path="/dashboard" element={<ClinicianDashboard />} />
           <Route path="/dashboard/:patientId" element={<PatientDetail />} />
           <Route path="/insurance" element={<InsuranceForm />} />
