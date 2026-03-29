@@ -6,7 +6,7 @@
 
 ##  Project Overview
 
-VoiceCanvas is a dual-platform mental health technology solution that empowers non-verbal and linguistically diverse patients to communicate through visual expression while providing clinicians with AI-powered clinical documentation and automated insurance advocacy tools.
+VoiceCanvas is a dual-platform mental health technology solution that empowers nonverbal and linguistically diverse patients to communicate through visual and musical expression while providing clinicians with AI-powered clinical documentation and automated insurance-advocacy tools. The B2B SAAS for both clients and doctors is designed to fight deep systemic barriers and unfairness in mental health diagnosis. 
 
 MindCanvas Clinician Dashboard is the **provider-facing companion application** to MindCanvas Patient. While the patient app captures emotional expression through drawing, this application empowers mental health clinicians, psychiatrists, and clinical psychologists to:
 
