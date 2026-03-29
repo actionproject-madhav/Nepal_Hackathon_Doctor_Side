@@ -337,4 +337,4 @@ These two applications work together through shared Azure Blob Storage:
 
 ## License
 
-This project was built for the Accenture Hackathon 2026.
+This project was built for the Nepali Hackathon 2026 by Koshish, Madhav,Aayush, Arman
