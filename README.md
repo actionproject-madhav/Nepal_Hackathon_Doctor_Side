@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # VoiceCanvas Clinic
 
 ## Project Overview
