@@ -74,8 +74,7 @@ Mental healthcare faces critical systemic barriers that disproportionately affec
 - **One-Click Appeal Generation**: Pre-written appeals with legal citations and clinical evidence
 - **83% Success Rate Tracking**: Real-time appeal outcome monitoring based on industry data
 
----
-=======
+
 # MindCanvas -- Clinician Dashboard (Doctor SaaS)
 
 ## Project Overview
@@ -105,12 +104,10 @@ Mental health clinicians face an overwhelming administrative burden. Insurance c
 - **Text-to-Speech Summary** -- Clinicians can listen to AI-generated patient summaries read aloud, useful during multi-tasking or for accessibility.
 - **Drawing Prompt Administration** -- Clinicians can review the drawing prompts assigned to patients and understand the clinical rationale behind each one.
 
->>>>>>> d7bd8ffd393b51c20a4314908a55907bb24cef8a
 
 ## Architecture
 
 ```
-<<<<<<< HEAD
 ┌─────────────────────────────────────────────────────────────┐
 │                     Patient App (React)                     │
 │  Drawing Canvas → Webcam Capture → Session Submit          │
@@ -601,4 +598,3 @@ These two applications work together through shared Azure Blob Storage:
 ## License
 
 This project was built for the Nepali Hackathon 2026 by Koshish, Madhav,Aayush, Arman
->>>>>>> d7bd8ffd393b51c20a4314908a55907bb24cef8a
