@@ -115,9 +115,11 @@ export default function SessionReplay() {
   const replay = useMemo(() => {
     if (!baseReplay) return null;
     if (!azureReplay) return baseReplay;
+    // Azure session: only use a real blob URL; never substitute the mock demo clip.
+    const videoUrl = azureReplay.videoUrl ?? null;
     return {
       ...baseReplay,
-      videoUrl: azureReplay.videoUrl ?? baseReplay.videoUrl,
+      videoUrl,
       drawingImageUrl: azureReplay.drawingImageUrl ?? null,
       sessionId: azureReplay.sessionId ?? baseReplay.sessionId,
       sessionDate: azureReplay.sessionDate ?? baseReplay.sessionDate,
@@ -277,6 +279,7 @@ export default function SessionReplay() {
           )}
 
           <div className="sr-video-wrap">
+            {replay.videoUrl ? (
             <video
               key={replay.videoUrl}
               ref={videoRef}
@@ -285,8 +288,14 @@ export default function SessionReplay() {
               playsInline
               onClick={togglePlay}
             />
+            ) : (
+            <div className="sr-video-missing" role="status">
+              <p><strong>No webcam recording</strong> for this session in Azure (drawing above may still be from the patient).</p>
+              <p className="sr-video-missing-hint">Complete a new session from the latest VoiceCanvas build to upload <code>replay.webm</code> with the camera.</p>
+            </div>
+            )}
 
-            {showAnalysis && currentEmotion && (
+            {replay.videoUrl && showAnalysis && currentEmotion && (
               <motion.div
                 className="sr-emotion-overlay"
                 key={currentEmotion.time}
@@ -308,8 +317,8 @@ export default function SessionReplay() {
               </motion.div>
             )}
 
-            {!isPlaying && (
-              <button className="sr-play-overlay" onClick={togglePlay}>
+            {replay.videoUrl && !isPlaying && (
+              <button type="button" className="sr-play-overlay" onClick={togglePlay}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
               </button>
             )}
