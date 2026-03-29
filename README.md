@@ -298,16 +298,6 @@ This is designed to support HIPAA compliance requirements for access logging and
 | `GMAIL_REFRESH_TOKEN` | No | Gmail OAuth2 refresh token |
 
 
-## Team Members and Roles
-
-| Name | Role | Responsibilities |
-|---|---|---|
-| Koshish Rimal | Team Lead / Full-Stack Developer | Architecture design, AI integration, clinician dashboard development, insurance automation pipeline |
-| Sagar Paudel | Frontend Developer | Clinician dashboard UI, patient detail views, session replay interface, CSS design system |
-| Member 3 | Backend Developer | Flask/Express API server, database integration, Gmail automation, deployment |
-| Member 4 | AI/ML Research | Parity engine logic, appeal letter generation, Claude prompt engineering, clinical validation |
-
-
 ## How It Works
 
 1. **Patient Draws in MindCanvas** -- The patient uses the MindCanvas Patient application to complete a drawing session. The AI analyzes the drawing and generates clinical data. Session replay data and canvas snapshots are uploaded to Azure Blob Storage.
