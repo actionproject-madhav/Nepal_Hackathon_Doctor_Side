@@ -141,7 +141,7 @@ export default function ClinicianDashboard() {
 
         {/* Doctor Profile Footer */}
         <div className="med-sb-doctor">
-          <img className="med-sb-dr-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=b6e3f4" alt="Doctor" />
+          <img className="med-sb-dr-avatar" src="/clinician-avatar.jpg" alt="Dr. Sarah Mitchell" />
           <span className="med-sb-dr-name">Dr. Sarah Mitchell</span>
           <span className="med-sb-dr-role">Lead Clinician</span>
           <div className="med-sb-dr-actions">
