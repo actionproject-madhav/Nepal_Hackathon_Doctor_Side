@@ -242,7 +242,6 @@ cd MindCanvas-Clinician
 ```
 
 ### Step 2: Install Frontend Dependencies
->>>>>>> d7bd8ffd393b51c20a4314908a55907bb24cef8a
 
 ```bash
 cd frontend
